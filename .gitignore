@@ -32,5 +32,8 @@ dist/
 .workbuddy/
 .wb/
 
+## 打包脚本只在本机保留（不出仓库），见 README「许可证」一节
+installer/
+
 ## UI 冒烟截图
 ui-smoke.png
