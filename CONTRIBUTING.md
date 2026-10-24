@@ -64,18 +64,19 @@ dotnet build -c Release
 
 ### 提交信息
 
-用 [Conventional Commits](https://www.conventionalcommits.org/)，**正文用中文**：
+**直接用一句中文说清做了什么，不加任何前缀**（如 `chore:` / `feat:`）——
+仓库首页的文件列表会显示每个文件最后一条提交信息，干净的可读性比形式化的类型标记更重要。
+
+正文可补充背景与原因：
 
 ```
-feat(core): 给 DownloadService 加官方源兜底
+给 DownloadService 加官方源兜底
 
 BMCLAPI 对 oshi-core 返回 403，导致部分库下载失败。
 现在每个 DownloadTask 都能配 FallbackUrls，主源失败自动切备源。
 
 Closes #12
 ```
-
-允许的类型：`feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `chore`。
 
 **一行 TODO 就走的 commit 不要超过一个 PR 的三分之一**，粒度太碎会让 review 无法进行。
 
