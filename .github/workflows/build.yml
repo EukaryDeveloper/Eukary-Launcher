@@ -40,9 +40,15 @@ jobs:
           name: EukaryLauncher-win-x64
           path: publish/
 
+      # 打包成单个 zip：Release 页面只留成品，不要散落的 exe 与 dll
+      - name: Package zip
+        shell: pwsh
+        run: Compress-Archive -Path "publish/*" -DestinationPath "EukaryLauncher-${{ github.ref_name }}-win-x64.zip"
+
+      # 图形安装包由维护者在本机构建（installer 脚本未入库），不在此处自动发布
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/*
+          files: EukaryLauncher-${{ github.ref_name }}-win-x64.zip
           generate_release_notes: true
