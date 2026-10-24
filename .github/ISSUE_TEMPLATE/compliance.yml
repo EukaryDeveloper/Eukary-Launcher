@@ -1,0 +1,45 @@
+name: 合规问题
+description: 报告任何涉及 Mojang 合规、商标、盗版相关的隐患
+title: "[Compliance] "
+labels: ["compliance", "high-priority"]
+body:
+  - type: markdown
+    value: |
+      本项目的生死线。如果你发现任何可能踩到合规红线的地方，请务必报告。
+      **如涉及隐私问题，请改用 [私密安全通报](https://github.com/EukaryDeveloper/Eukary-Launcher/security/advisories/new)。**
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: 涉及哪类合规问题
+      options:
+        - 使用了 Minecraft 官方素材（Logo / 纹理 / 角色形象）
+        - 硬编码了他人的 Azure Client ID / 密钥
+        - 可能构成盗版或绕过正版验证
+        - 版权声明缺失或不正确
+        - 分发了游戏本体文件
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: where
+    attributes:
+      label: 问题位置
+      description: 具体文件与行号，或 Release 里的那个产物
+    validations:
+      required: true
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: 具体说明
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggest
+    attributes:
+      label: 建议怎么改
+    validations:
+      required: false

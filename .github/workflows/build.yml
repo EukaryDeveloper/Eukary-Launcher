@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      # 纯逻辑断言不需要网络，CI 直接跑；端到端下载/启动需要网络与桌面环境，留在本地手动验证
+      - name: Smoke (pure logic)
+        run: dotnet run --project EukaryLauncher.Smoke -c Release --no-build
+
+      - name: Publish (self-contained single file)
+        run: >
+          dotnet publish EukaryLauncher.App -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -o publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EukaryLauncher-win-x64
+          path: publish/
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: publish/*
+          generate_release_notes: true

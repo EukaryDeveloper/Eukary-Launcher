@@ -1,0 +1,89 @@
+name: 缺陷报告
+description: 报告一个明确的错误行为
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    value: |
+      提 Bug 前请先确认：
+      - 已在 [已知 Issue](https://github.com/EukaryDeveloper/Eukary-Launcher/issues?q=is%3Aissue) 中搜过
+      - 已升级到最新版本
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 简明描述异常现象
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 下载版本 1.20.4
+        2. 点"启动游戏"
+        3. 看到 xxx
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: 启动器版本
+      description: 关于页可见，例如 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: mc-version
+    attributes:
+      label: 游戏版本
+      description: 例如 1.20.4（没下游戏就填"无"）
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Windows 版本
+      placeholder: 例如 Windows 11 23H2 (22631)
+    validations:
+      required: true
+
+  - type: input
+    id: java
+    attributes:
+      label: Java 版本
+      description: 由启动器托管则填"启动器托管"，否则填你自己的版本
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志片段
+      description: |
+        日志在 %LOCALAPPDATA%\EukaryLauncher\logs\
+        请贴出**出错前后 30 行**，并删掉里面的用户名等个人信息
+      render: log
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: check
+    attributes:
+      label: 确认项
+      options:
+        - label: 日志里没有残留我的个人信息 / 真实凭证
+          required: true
+        - label: 这不是"游戏本体报错"（那是 Mojang 的问题，不属于本项目）
+          required: true

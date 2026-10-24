@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>false</UseWindowsForms>
+    <RootNamespace>EukaryLauncher.App</RootNamespace>
+    <AssemblyName>EukaryLauncher</AssemblyName>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+    <!-- 体积控制
+         注意：指南里建议的 ILTrimming / NativeAOT 对 WPF 不适用（NETSDK1168），
+         WPF 项目只能用 self-contained + 单文件发布来控制体积。
+         另外 InvariantGlobalization 也不能开——会报 "Cannot find non-neutral culture
+         related to 'en-us'"，WPF 绑定依赖具体文化。 -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+  </ItemGroup>
+
+  <!-- WPF 项目默认隐式 using 不含 System.IO / System.Windows.Media -->
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Include="System.Windows.Media" />
+    <Using Include="System.Diagnostics" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\AppIcon.ico" />
+    <Resource Include="Assets\AppIcon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EukaryLauncher.Core\EukaryLauncher.Core.csproj" />
+  </ItemGroup>
+
+</Project>

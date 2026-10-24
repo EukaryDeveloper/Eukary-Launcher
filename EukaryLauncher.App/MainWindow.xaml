@@ -1,0 +1,156 @@
+<Window x:Class="EukaryLauncher.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:vm="clr-namespace:EukaryLauncher.App.ViewModels"
+        xmlns:views="clr-namespace:EukaryLauncher.App.Views"
+        xmlns:anim="clr-namespace:EukaryLauncher.App.Animation"
+        mc:Ignorable="d"
+        Title="真核启动器"
+        MinWidth="900" MinHeight="600"
+        Width="1040" Height="660"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Background="{DynamicResource BgBaseBrush}"
+        FontFamily="{StaticResource FontSans}">
+
+    <!-- 去掉 Windows 传统边框，自绘标题栏 -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="38"
+                            ResizeBorderThickness="6"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- 关闭按钮：hover 变红 -->
+        <Style x:Key="CloseChromeButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
+                    <Setter Property="Foreground" Value="#FFFFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate DataType="{x:Type vm:HomeViewModel}">
+            <views:HomeView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:VersionsViewModel}">
+            <views:VersionsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ConsoleViewModel}">
+            <views:ConsoleView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AboutViewModel}">
+            <views:AboutView/>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Window.Icon>
+        <BitmapImage UriSource="pack://application:,,,/Assets/AppIcon.png"/>
+    </Window.Icon>
+
+    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="38"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- ===================== 自绘标题栏 ===================== -->
+            <Grid Grid.Row="0" Background="{DynamicResource BgElevatedBrush}">
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"/>
+
+                <StackPanel Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <!-- Logo：真核细胞意象（外膜 + 核仁），自绘，不使用任何 Minecraft 素材 -->
+                    <Grid Width="16" Height="16" Margin="0,0,10,0">
+                        <Ellipse Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6"/>
+                        <Ellipse Width="5" Height="5" Fill="{DynamicResource AccentBrush}"/>
+                    </Grid>
+                    <TextBlock Text="真核启动器" FontSize="{StaticResource FontSizeSm}"
+                               Foreground="{DynamicResource Text1Brush}" FontWeight="SemiBold"/>
+                    <TextBlock Text="—" Margin="8,0" Foreground="{DynamicResource Text3Brush}"
+                               FontSize="{StaticResource FontSizeSm}"/>
+                    <TextBlock Text="{Binding Home.SelectedVersionId, TargetNullValue='未选择版本'}"
+                               FontSize="{StaticResource FontSizeSm}"
+                               Foreground="{DynamicResource Text3Brush}"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="MinimizeButton" Style="{StaticResource GhostButton}"
+                            Width="46" Height="30" Padding="0" MinWidth="0"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                            ToolTip="最小化" Click="OnMinimizeClick">
+                        <Path Data="M0,0 L10,0" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.2" StrokeStartLineCap="Round"/>
+                    </Button>
+                    <Button x:Name="MaximizeButton" Style="{StaticResource GhostButton}"
+                            Width="46" Height="30" Padding="0" MinWidth="0"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                            ToolTip="最大化" Click="OnMaximizeClick">
+                        <Rectangle Width="10" Height="9" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                   StrokeThickness="1.2" Fill="Transparent"/>
+                    </Button>
+                    <Button x:Name="CloseButton" Style="{StaticResource CloseChromeButton}"
+                            Width="46" Height="30" Padding="0" MinWidth="0"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                            ToolTip="关闭" Click="OnCloseClick">
+                        <Path Data="M0,0 L10,10 M10,0 L0,10"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.2" StrokeStartLineCap="Round"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ===================== 主体 ===================== -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 侧边栏 -->
+                <Border Grid.Column="0" Background="{DynamicResource BgElevatedBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <ListBox Grid.Row="0"
+                                 ItemsSource="{Binding NavItems}"
+                                 SelectedValue="{Binding CurrentPage, Mode=TwoWay}"
+                                 SelectedValuePath="Page"
+                                 ItemContainerStyle="{StaticResource SidebarItem}"
+                                 Background="Transparent" BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Title}" FontSize="{StaticResource FontSizeSm}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock Grid.Row="1" Margin="12,0,0,4"
+                                   Text="EKL v0.1.0 · M1"
+                                   Style="{StaticResource TextCaption}"/>
+                    </Grid>
+                </Border>
+
+                <!-- 页面 -->
+                <ContentControl Grid.Column="1" x:Name="PageHost"
+                                Content="{Binding CurrentViewModel}"
+                                Focusable="False"/>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

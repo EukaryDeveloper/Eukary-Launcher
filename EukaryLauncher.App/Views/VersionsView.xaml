@@ -1,0 +1,175 @@
+<UserControl x:Class="EukaryLauncher.App.Views.VersionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:EukaryLauncher.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:VersionsViewModel}"
+             FontFamily="{StaticResource FontSans}">
+    <UserControl.Resources>
+        <Style x:Key="EmptyHintStyle" TargetType="TextBlock" BasedOn="{StaticResource TextCaption}">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Installed.Count}" Value="0">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="版本列表" FontSize="{StaticResource FontSizeXl}" FontWeight="Bold"
+                           Foreground="{DynamicResource Text1Brush}"/>
+                <TextBlock Text="{Binding StatusText}" Style="{StaticResource TextCaption}"
+                           VerticalAlignment="Bottom" Margin="12,0,0,4"/>
+            </StackPanel>
+            <Button Content="打开游戏目录" Style="{StaticResource SmallButton}"
+                    HorizontalAlignment="Right" Command="{Binding OpenGameFolderCommand}"/>
+        </Grid>
+
+        <!-- 已安装 -->
+        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="16" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="已安装" Style="{StaticResource TextMuted}" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+                <ItemsControl ItemsSource="{Binding Installed}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Card}" Width="200" Margin="0,0,10,10">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Id}" FontSize="{StaticResource FontSizeSm}"
+                                               FontWeight="SemiBold" Foreground="{DynamicResource Text1Brush}"/>
+                                    <TextBlock Text="{Binding TypeLabel}" Style="{StaticResource TextCaption}"
+                                               Margin="0,2,0,0"/>
+                                    <TextBlock Margin="0,6,0,0" Style="{StaticResource TextCaption}">
+                                        <Run Text="{Binding SizeText}"/>
+                                        <Run Text=" · "/>
+                                        <Run Text="{Binding ReleaseTimeText}"/>
+                                    </TextBlock>
+                                    <Button Content="删除" Style="{StaticResource DangerButton}"
+                                            Height="28" Padding="12,0" FontSize="{StaticResource FontSizeXs}"
+                                            MinWidth="48" Margin="0,10,0,0" HorizontalAlignment="Left"
+                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="还没有安装任何版本，从下面的清单里挑一个下载吧。"
+                           Style="{StaticResource EmptyHintStyle}" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 可下载清单 -->
+        <Border Grid.Row="2" Style="{StaticResource Panel}">
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
+                    <TextBox Width="220" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="按版本号搜索"/>
+                    <CheckBox Content="显示快照" IsChecked="{Binding ShowSnapshots, Mode=TwoWay}"
+                              Margin="16,0,0,0" VerticalAlignment="Center"/>
+                    <CheckBox Content="显示远古版本" IsChecked="{Binding ShowOldVersions, Mode=TwoWay}"
+                              Margin="16,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                        Margin="0,0,0,0"/>
+
+                <ListBox Grid.Row="2" ItemsSource="{Binding Available}"
+                         SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                         Background="Transparent" BorderThickness="0" Margin="0,8,0,0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                CornerRadius="{StaticResource RadiusSm}"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background"
+                                                        Value="{StaticResource BgHoverBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Bd" Property="Background"
+                                                        Value="{StaticResource AccentTintBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Id}" Foreground="{DynamicResource Text1Brush}"
+                                               FontSize="{StaticResource FontSizeSm}" FontWeight="SemiBold"
+                                               Width="140"/>
+                                    <TextBlock Text="{Binding TypeText}" Style="{StaticResource TextCaption}"
+                                               Width="80"/>
+                                    <TextBlock Text="{Binding ReleaseTimeText}" Style="{StaticResource TextCaption}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="已安装" Style="{StaticResource TextCaption}"
+                                               Foreground="{DynamicResource AccentBrush}"
+                                               VerticalAlignment="Center" Margin="0,0,12,0"
+                                               Visibility="{Binding Installed, Converter={StaticResource BoolToVisibility}}"/>
+                                    <Button Content="安装" Style="{StaticResource SmallButton}"
+                                            Command="{Binding DataContext.InstallCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- 安装进度 -->
+                <StackPanel Grid.Row="3" Margin="0,14,0,0">
+                    <ProgressBar Value="{Binding ProgressValue, Mode=OneWay}" Maximum="100"
+                                 Visibility="{Binding IsInstalling, Converter={StaticResource BoolToVisibility}}"/>
+                    <Grid Margin="0,8,0,0"
+                          Visibility="{Binding IsInstalling, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{Binding ProgressText}" Style="{StaticResource TextCaption}"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="取消" Style="{StaticResource GhostButton}"
+                                Height="28" Padding="12,0" FontSize="{StaticResource FontSizeXs}" MinWidth="48"
+                                HorizontalAlignment="Right" Command="{Binding CancelInstallCommand}"/>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
