@@ -8,6 +8,11 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# 创建 Release 与上传 assets 需要写权限；
+# 新建仓库的 GITHUB_TOKEN 默认只读，不声明会因 "Resource not accessible by integration" 失败
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
