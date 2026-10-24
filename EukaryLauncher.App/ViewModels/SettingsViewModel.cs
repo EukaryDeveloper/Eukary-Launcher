@@ -26,8 +26,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     public ObservableCollection<JavaOption> JavaOptions { get; } = new();
 
-    [ObservableProperty] private string gameDirectory;
-    [ObservableProperty] private string mirrorId;
+    [ObservableProperty] private string gameDirectory = string.Empty;
+    [ObservableProperty] private string mirrorId = string.Empty;
     [ObservableProperty] private int maxMemoryMb;
     [ObservableProperty] private int downloadThreads;
     [ObservableProperty] private bool keepLauncherOpen;
