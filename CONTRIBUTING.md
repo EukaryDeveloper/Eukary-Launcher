@@ -137,11 +137,4 @@ CI 会自动跑上面第一条。改动涉及下载器时，请**至少手动验
 
 ---
 
-## 八、里程碑
-
-当前进度见 [README](README.md)。M2（微软账号登录）正在推进，
-想接手某个里程碑请先在 Issue 里认领，避免和别人撞车。
-
----
-
 有问题欢迎在 [Discussions](https://github.com/EukaryDeveloper/Eukary-Launcher/discussions) 里聊，不用拘束。

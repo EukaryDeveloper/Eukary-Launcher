@@ -127,18 +127,6 @@ dotnet publish EukaryLauncher.App -c Release -r win-x64 --self-contained -p:Publ
 
 ---
 
-## 后续里程碑
-
-- **M2** 微软账号登录（OAuth + PKCE → XBL → XSTS → MC token）
-- **M3** Fabric 支持 + Modrinth 模组下载
-- **M4** 整合包导入导出（mrpack / CurseForge zip）
-- **M5** NeoForge + 老 Forge 兼容
-- **M6** 主题系统 + 资源包 / 光影 / 数据包
-- **M7** 发布与自动更新
-- **M8** 插件系统与插件市场（`AssemblyLoadContext` 隔离加载）
-
----
-
 ## 参与开发
 
 欢迎提 Issue、改进文档、写代码。开工前请读：
