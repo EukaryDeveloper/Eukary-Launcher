@@ -17,17 +17,12 @@
 
 ## 下载与安装
 
-从 [Releases](https://github.com/EukaryDeveloper/Eukary-Launcher/releases) 下载 `EukaryLauncher-x.y.z-Setup.exe`，双击安装即可。
+从 [Releases](https://github.com/EukaryDeveloper/Eukary-Launcher/releases) 下载安装包双击安装即可；
+也可以拉下源码自己跑（见下方「构建与运行」）。
 
-- 自包含单文件，**不需要预先安装 .NET 运行时**
+- 安装包自包含单文件，**不需要预先安装 .NET 运行时**
 - 按用户安装到 `%LOCALAPPDATA%\Programs\Eukary Launcher`，**不需要管理员权限**
 - 卸载从开始菜单或「应用和功能」，已下载的游戏文件和 Java 运行时可选择保留
-
-想自己打包安装包：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File installer\build_installer.ps1
-```
 
 ---
 
@@ -86,7 +81,6 @@ EukaryLauncher.sln
 │   ├── Animation/             ← cubic-bezier(0.2,0.8,0.2,1) 缓动实现
 │   ├── Views/  ViewModels/  Services/  Converters/
 ├── EukaryLauncher.Smoke/      ← 冒烟测试（纯逻辑断言 + 端到端下载/启动）
-├── installer/                 ← NSIS 安装包脚本
 └── docs/                      ← 文档资源
 ```
 
