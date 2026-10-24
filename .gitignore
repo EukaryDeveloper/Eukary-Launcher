@@ -28,6 +28,10 @@ plugins/
 publish/
 dist/
 
+## AI 生成的宣传素材（体积大，不进仓库）
+generated-videos/
+generated-images/
+
 ## 本地编辑器工作区配置（含本机路径与开发日志，不进仓库）
 .workbuddy/
 .wb/
