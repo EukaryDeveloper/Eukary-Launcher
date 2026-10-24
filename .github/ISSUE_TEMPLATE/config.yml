@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 提问与讨论
+    url: https://github.com/EukaryDeveloper/Eukary-Launcher/discussions
+    about: 用法问题、想法交流请来这里；明确的 Bug 请走 Issue 模板
+  - name: 🔒 报告安全漏洞
+    url: https://github.com/EukaryDeveloper/Eukary-Launcher/security/advisories/new
+    about: 请勿在公开 Issue 里发漏洞详情
+  - name: ⚖️ 合规问题
+    url: https://github.com/EukaryDeveloper/Eukary-Launcher/issues/new?template=compliance.yml
+    about: 涉及 Mojang 商标、盗版、凭证硬编码等红线问题

@@ -1,0 +1,36 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild[Ll]og.*
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+*.nupkg
+project.lock.json
+project.assets.json
+
+## 启动器运行时产物（绝对不能进仓库：都是游戏本体和 Java 运行时）
+runtime/
+.minecraft/
+logs/
+plugins/
+
+## 单文件发布产物
+*.zip
+publish/
+dist/
+
+## 本地 AI 工作备忘（含本机路径与开发日志，不进仓库）
+.workbuddy/
+.wb/
+
+## UI 冒烟截图
+ui-smoke.png

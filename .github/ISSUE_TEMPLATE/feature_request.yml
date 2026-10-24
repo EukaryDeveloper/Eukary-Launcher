@@ -1,0 +1,61 @@
+name: 功能建议
+description: 提出一个新想法或改进点
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    value: |
+      说清楚**你要解决什么问题**，比直接给技术方案更重要——
+      同一个需求往往有更简单的实现，我们知道原始问题才好权衡。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你要解决什么问题
+      description: 描述你遇到的困扰，而不是直接给方案
+      placeholder: 例如"我每次换版本都要重新设置内存大小，很麻烦"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 属于哪个模块
+      options:
+        - 下载 / 安装
+        - 游戏启动 / 参数
+        - 微软账号登录
+        - 模组 / Fabric / Forge（M3、M5）
+        - 整合包（M4）
+        - 界面 / 主题（M6）
+        - 自动更新（M7）
+        - 插件系统（M8）
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 你的方案（可选）
+      description: 有想法可以写，没有就留空
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 你考虑过的替代方案
+    validations:
+      required: false
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: 你愿意参与实现吗
+      options:
+        - 只提想法
+        - 愿意实现，但我需要指导
+        - 我可以自己实现并提交 PR
+    validations:
+      required: true

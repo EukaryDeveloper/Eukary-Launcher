@@ -1,0 +1,145 @@
+<UserControl x:Class="EukaryLauncher.App.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:EukaryLauncher.App.ViewModels"
+             xmlns:svc="clr-namespace:EukaryLauncher.App.Services"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:HomeViewModel}"
+             FontFamily="{StaticResource FontSans}">
+    <Grid Margin="28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,24">
+            <Grid Width="34" Height="34" Margin="0,0,14,0" VerticalAlignment="Center">
+                <Ellipse Stroke="{DynamicResource AccentBrush}" StrokeThickness="2"/>
+                <Ellipse Width="11" Height="11" Fill="{DynamicResource AccentBrush}"/>
+            </Grid>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="真核启动器" FontSize="{StaticResource FontSizeXl}" FontWeight="Bold"
+                           Foreground="{DynamicResource Text1Brush}"/>
+                <TextBlock Text="Eukary Launcher · 最小可用版本 M1" Style="{StaticResource TextCaption}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- 中部：启动区 -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 左：大按钮 + 状态 -->
+            <Border Grid.Column="0" Style="{StaticResource Panel}" Padding="28" Margin="0,0,20,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding StatusText}" Style="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                        <Button Content="开始游戏"
+                                Style="{StaticResource LargeButton}"
+                                MinWidth="220" Height="48" FontSize="{StaticResource FontSizeLg}"
+                                Command="{Binding LaunchCommand}"
+                                IsEnabled="{Binding CanLaunch}"/>
+
+                        <Button Content="取消" Style="{StaticResource GhostButton}"
+                                Margin="0,12,0,0" MinWidth="120"
+                                Command="{Binding CancelCommand}"
+                                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"/>
+
+                        <TextBlock Text="{Binding JavaStatusText}" Style="{StaticResource TextCaption}"
+                                   HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,20,0,0">
+                        <ProgressBar Value="{Binding ProgressValue, Mode=OneWay}" Maximum="100" Height="6"
+                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"/>
+                        <TextBlock Text="{Binding ProgressText}" Style="{StaticResource TextCaption}"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0"
+                                   Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 右：启动配置 -->
+            <Border Grid.Column="1" Style="{StaticResource Panel}" Padding="20">
+                <StackPanel>
+                    <TextBlock Text="启动配置" FontSize="{StaticResource FontSizeBase}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource Text1Brush}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="游戏版本" Style="{StaticResource TextMuted}" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding InstalledVersions}"
+                              SelectedItem="{Binding SelectedVersionId, Mode=TwoWay}"
+                              Margin="0,0,0,16" HorizontalAlignment="Stretch"
+                              ToolTip="已安装的版本；需要装新版本请到「版本列表」页"/>
+
+                    <TextBlock Text="玩家名（离线模式）" Style="{StaticResource TextMuted}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding PlayerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,16" HorizontalAlignment="Stretch"
+                             ToolTip="3–16 位，字母、数字、下划线。M1 仅支持离线模式"/>
+
+                    <TextBlock Text="最大内存" Style="{StaticResource TextMuted}" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding MemoryOptions}"
+                              SelectedItem="{Binding MaxMemoryMb, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch"
+                              ToolTip="建议 2048–8192 MB，不要超过物理内存的一半">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0} MB">
+                                            <Binding/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{StaticResource RadiusSm}"
+                            Padding="12" Margin="0,24,0,0">
+                        <StackPanel>
+                            <TextBlock Text="离线模式说明" Style="{StaticResource TextCaption}" Margin="0,0,0,4"/>
+                            <TextBlock TextWrapping="Wrap" Style="{StaticResource TextMuted}" FontSize="12">
+                                离线登录是 Mojang EULA 允许的本地玩法，只能玩单机，
+                                无法进入需要正版验证的服务器。正版登录将在 M2 支持。
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- 底部：最近日志 -->
+        <Border Grid.Row="2" Style="{StaticResource Panel}" Padding="16,12" Margin="0,20,0,0" Height="120">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="最近日志" Style="{StaticResource TextCaption}" Margin="0,0,0,8"/>
+                <ScrollViewer Grid.Row="1" x:Name="LogScroller" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Source={x:Static svc:LogService.Instance}, Path=Entries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Display}" Style="{StaticResource MonoText}"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
