@@ -41,6 +41,27 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private double javaProgressValue;
     [ObservableProperty] private string javaStatusText = "";
 
+    // 「额外 JVM 参数」编辑弹窗：打开时复制当前值进编辑副本，确认才写回
+    [ObservableProperty] private bool isJvmDialogOpen;
+    [ObservableProperty] private string jvmDialogText = "";
+
+    [RelayCommand]
+    private void OpenJvmDialog()
+    {
+        JvmDialogText = ExtraJvmArgs ?? "";
+        IsJvmDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void ConfirmJvmDialog()
+    {
+        ExtraJvmArgs = JvmDialogText;
+        IsJvmDialogOpen = false;
+    }
+
+    [RelayCommand]
+    private void CancelJvmDialog() => IsJvmDialogOpen = false;
+
     public override async Task OnNavigatedAsync()
     {
         GameDirectory = _settings.Current.GameDirectory;

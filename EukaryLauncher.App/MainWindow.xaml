@@ -203,6 +203,60 @@
                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
                           Margin="0,0,20,20" IsHitTestVisible="False"
                           Focusable="False"/>
+
+            <!-- ===================== 模态弹窗遮罩 ===================== -->
+            <Grid Grid.Row="0" Grid.RowSpan="2"
+                  Background="{StaticResource ScrimBrush}"
+                  Visibility="{Binding Settings.IsJvmDialogOpen, Converter={StaticResource BoolToVisibility}}">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Style.Triggers>
+                            <Trigger Property="Visibility" Value="Visible">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1"
+                                                             Duration="{StaticResource DurationPage}"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Border Background="{StaticResource BgElevatedBrush}"
+                        BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusLg}" Padding="24"
+                        Width="480" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        SnapsToDevicePixels="True">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" Opacity="0.45" BlurRadius="24" ShadowDepth="4"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <TextBlock Text="额外 JVM 参数" FontSize="{StaticResource FontSizeLg}"
+                                   FontWeight="SemiBold" Foreground="{StaticResource Text1Brush}"/>
+                        <TextBlock Text="多个参数用空格分隔；含空格的路径要用引号包起来。"
+                                   Style="{StaticResource TextCaption}" Margin="0,4,0,0"/>
+
+                        <TextBox Text="{Binding Settings.JvmDialogText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,16,0,0"
+                                 ToolTip="例如 -XX:+UseG1GC，多个参数用空格分隔，含空格的路径用引号包裹">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding Settings.ConfirmJvmDialogCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                            <Button Content="放弃更改" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding Settings.CancelJvmDialogCommand}"/>
+                            <Button Content="确认更改" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"
+                                    Command="{Binding Settings.ConfirmJvmDialogCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Grid>
     </Border>
 </Window>

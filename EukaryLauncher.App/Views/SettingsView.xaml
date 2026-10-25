@@ -248,8 +248,9 @@
                                     <TextBlock Text="例如 -XX:+UseG1GC；含空格的路径要用引号包起来"
                                                Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
                                 </StackPanel>
-                                <TextBox Grid.Column="1" VerticalAlignment="Center"
-                                         Text="{Binding ExtraJvmArgs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Button Grid.Column="1" Content="修改" Style="{StaticResource SecondaryButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center" Width="80"
+                                        Command="{Binding OpenJvmDialogCommand}"/>
                             </Grid>
                         </ContentControl>
                         <ContentControl Style="{StaticResource SettingsRowLast}">
