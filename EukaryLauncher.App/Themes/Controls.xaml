@@ -827,4 +827,47 @@
         <Setter Property="Foreground" Value="{StaticResource Text2Brush}"/>
     </Style>
 
+    <!-- ============================================================
+         信息流布局（设置 / 关于）：分组标题 + 卡片内逐行排列。
+         一行 = 左侧标题/描述，右侧控件；行与行之间一条细分隔线。
+         注意：样式之间用 BasedOn 引用时必须是「先定义后引用」，
+         StaticResource 不做前向解析，所以这组要放在最后。
+         ============================================================ -->
+    <Style x:Key="SettingsSectionTitle" TargetType="TextBlock" BasedOn="{StaticResource TextCaption}">
+        <Setter Property="Foreground" Value="{StaticResource Text2Brush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="4,0,4,8"/>
+    </Style>
+
+    <!-- 分组容器：只有外框，内边距交给行自己，行背景不溢出圆角 -->
+    <Style x:Key="SettingsGroup" TargetType="Border" BasedOn="{StaticResource Panel}">
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <!-- 行：底部分隔线 + 悬停底色 -->
+    <Style x:Key="SettingsRow" TargetType="Border">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="20,14"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource BgHoverBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- 分组最后一行：不留尾巴上的线 -->
+    <Style x:Key="SettingsRowLast" TargetType="Border" BasedOn="{StaticResource SettingsRow}">
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <!-- 行内只读值（版本号、路径等），右对齐 -->
+    <Style x:Key="SettingsValue" TargetType="TextBlock" BasedOn="{StaticResource TextBody}">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
 </ResourceDictionary>

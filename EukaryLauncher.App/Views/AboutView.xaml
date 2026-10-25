@@ -9,45 +9,122 @@
              FontFamily="{StaticResource FontSans}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="28,24">
-            <StackPanel MaxWidth="640" HorizontalAlignment="Left">
+            <StackPanel MaxWidth="760" HorizontalAlignment="Left">
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                    <Grid Width="44" Height="44" Margin="0,0,16,0">
+                <!-- 应用概览 -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,28">
+                    <Grid Width="52" Height="52" Margin="0,0,16,0">
                         <Ellipse Stroke="{DynamicResource AccentBrush}" StrokeThickness="2.4"/>
-                        <Ellipse Width="14" Height="14" Fill="{DynamicResource AccentBrush}"/>
+                        <Ellipse Width="16" Height="16" Fill="{DynamicResource AccentBrush}"/>
                     </Grid>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="真核启动器 Eukary Launcher" FontSize="{StaticResource FontSizeXl}"
                                    FontWeight="Bold" Foreground="{DynamicResource Text1Brush}"/>
                         <TextBlock Text="EKL · 免费，开源，个性化"
-                                   Style="{StaticResource TextCaption}"/>
+                                   Style="{StaticResource TextCaption}" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
-                <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,16">
+                <!-- ============================ 应用信息 ============================ -->
+                <TextBlock Text="应用信息" Style="{StaticResource SettingsSectionTitle}"/>
+                <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <Grid Margin="0,0,0,8">
-                            <TextBlock Text="版本" Style="{StaticResource TextMuted}"/>
-                            <TextBlock Text="{Binding Version}" Style="{StaticResource TextBody}"
-                                       HorizontalAlignment="Right"/>
-                        </Grid>
-                        <Grid Margin="0,0,0,8">
-                            <TextBlock Text="开发者" Style="{StaticResource TextMuted}"/>
-                            <TextBlock Text="{Binding Author}" Style="{StaticResource TextBody}"
-                                       HorizontalAlignment="Right"/>
-                        </Grid>
-                        <Grid>
-                            <TextBlock Text="开源协议" Style="{StaticResource TextMuted}"/>
-                            <TextBlock Text="{Binding License}" Style="{StaticResource TextBody}"
-                                       HorizontalAlignment="Right"/>
-                        </Grid>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="版本" Style="{StaticResource TextMuted}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Version}" Style="{StaticResource SettingsValue}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="开发者" Style="{StaticResource TextMuted}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Author}" Style="{StaticResource SettingsValue}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="开源协议" Style="{StaticResource TextMuted}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding License}" Style="{StaticResource SettingsValue}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="运行环境" Style="{StaticResource TextMuted}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource SettingsValue}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRowLast}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="数据目录" Style="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding DataDirectory}" Style="{StaticResource MonoText}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="打开" Style="{StaticResource SecondaryButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center" Width="80"
+                                        Command="{Binding OpenDataFolderCommand}"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 
-                <!-- 合规声明：这是必须放在显眼位置的免责条款 -->
+                <!-- ============================ 项目 ============================ -->
+                <TextBlock Text="项目" Style="{StaticResource SettingsSectionTitle}"/>
+                <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
+                    <StackPanel>
+                        <Border Style="{StaticResource SettingsRowLast}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="源码仓库" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="{Binding Repository}" Style="{StaticResource MonoText}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                                            VerticalAlignment="Center">
+                                    <Button Content="复制" Style="{StaticResource SecondaryButton}" Width="80"
+                                            Command="{Binding CopyRepositoryCommand}"/>
+                                    <Button Content="访问" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                            Command="{Binding OpenLinkCommand}"
+                                            CommandParameter="{Binding RepositoryLink}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ============================ 免责声明 ============================ -->
+                <TextBlock Text="合规" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Background="{DynamicResource BgSurfaceBrush}"
                         BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1"
-                        CornerRadius="{StaticResource RadiusMd}" Padding="20" Margin="0,0,0,16">
+                        CornerRadius="{StaticResource RadiusLg}" Padding="20" Margin="0,0,0,24">
                     <StackPanel>
                         <TextBlock Text="免责声明" FontWeight="SemiBold" Style="{StaticResource TextBody}"
                                    Foreground="{DynamicResource WarningBrush}" Margin="0,0,0,8"/>
@@ -58,28 +135,61 @@
                     </StackPanel>
                 </Border>
 
-                <Border Style="{StaticResource Panel}" Padding="20">
+                <!-- ============================ 资源来源 ============================ -->
+                <TextBlock Text="资源来源" Style="{StaticResource SettingsSectionTitle}"/>
+                <Border Style="{StaticResource SettingsGroup}">
                     <StackPanel>
-                        <TextBlock Text="资源来源" FontWeight="SemiBold" Style="{StaticResource TextBody}"
-                                   Margin="0,0,0,12"/>
-                        <TextBlock TextWrapping="Wrap" Style="{StaticResource TextMuted}">
-                            <Run Text="· 版本清单与游戏文件：Mojang 官方 / BMCLAPI 镜像"/>
-                            <LineBreak/>
-                            <Run Text="· Java 运行时：Eclipse Temurin（Adoptium）"/>
-                            <LineBreak/>
-                            <Run Text="· 本启动器不打包、不分发任何 Minecraft 游戏文件"/>
-                        </TextBlock>
-                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                            <Button Content="BMCLAPI" Style="{StaticResource SmallButton}"
-                                    Command="{Binding OpenLinkCommand}"
-                                    CommandParameter="https://bmclapidoc.bangbang93.com/"/>
-                            <Button Content="Adoptium" Style="{StaticResource SmallButton}" Margin="8,0,0,0"
-                                    Command="{Binding OpenLinkCommand}"
-                                    CommandParameter="https://adoptium.net/"/>
-                            <Button Content="GPL-3.0" Style="{StaticResource SmallButton}" Margin="8,0,0,0"
-                                    Command="{Binding OpenLinkCommand}"
-                                    CommandParameter="https://www.gnu.org/licenses/gpl-3.0.html"/>
-                        </StackPanel>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="版本清单与游戏文件" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="Mojang 官方 / BMCLAPI 镜像" Style="{StaticResource TextCaption}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="访问" Style="{StaticResource SecondaryButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center" Width="80"
+                                        Command="{Binding OpenLinkCommand}"
+                                        CommandParameter="{Binding BmclapiLink}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Java 运行时" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="Eclipse Temurin（Adoptium）" Style="{StaticResource TextCaption}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="访问" Style="{StaticResource SecondaryButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center" Width="80"
+                                        Command="{Binding OpenLinkCommand}"
+                                        CommandParameter="{Binding AdoptiumLink}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRowLast}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="开源协议" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="GNU General Public License v3.0" Style="{StaticResource TextCaption}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="访问" Style="{StaticResource SecondaryButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center" Width="80"
+                                        Command="{Binding OpenLinkCommand}"
+                                        CommandParameter="{Binding LicenseLink}"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 

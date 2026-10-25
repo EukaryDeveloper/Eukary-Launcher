@@ -9,110 +9,265 @@
              FontFamily="{StaticResource FontSans}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="28,24">
-            <StackPanel MaxWidth="640" HorizontalAlignment="Left">
+            <StackPanel MaxWidth="760" HorizontalAlignment="Left">
 
                 <TextBlock Text="设置" FontSize="{StaticResource FontSizeXl}" FontWeight="Bold"
-                           Foreground="{DynamicResource Text1Brush}" Margin="0,0,0,24"/>
+                           Foreground="{DynamicResource Text1Brush}"/>
+                <TextBlock Text="改动会即时保存，不需要点确认。鼠标划过某一行可以查看它属于哪一类。"
+                           Style="{StaticResource TextCaption}" Margin="0,6,0,24"/>
 
-                <!-- 游戏目录 -->
-                <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,16">
+                <!-- ============================ 游戏文件 ============================ -->
+                <TextBlock Text="游戏文件" Style="{StaticResource SettingsSectionTitle}"/>
+                <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <TextBlock Text="游戏目录" FontWeight="SemiBold" Style="{StaticResource TextBody}"
-                                   Margin="0,0,0,4"/>
-                        <TextBlock Text=".minecraft 根目录，版本、资源、存档都在这里。修改后需要重新扫描已安装版本。"
-                                   Style="{StaticResource TextCaption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                        <Grid>
-                            <TextBox Text="{Binding GameDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     HorizontalAlignment="Stretch" Margin="0,0,12,0"/>
-                            <Button Content="浏览" Style="{StaticResource SecondaryButton}"
-                                    HorizontalAlignment="Right" Width="80"
-                                    Command="{Binding BrowseGameDirectoryCommand}"/>
-                        </Grid>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="游戏目录" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text=".minecraft 根目录，版本、存档、资源都放在这里"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Grid Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBox Text="{Binding GameDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,88,0" ToolTip="修改后会自动重新扫描已安装版本"/>
+                                    <Button Content="浏览" Style="{StaticResource SecondaryButton}"
+                                            HorizontalAlignment="Right" Width="80"
+                                            Command="{Binding BrowseGameDirectoryCommand}"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRowLast}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="启动器数据目录" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="日志、Java 运行时、配置文件的存放位置"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="打开" Style="{StaticResource SecondaryButton}"
+                                        HorizontalAlignment="Right" Width="80"
+                                        Command="{Binding OpenDataFolderCommand}"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 
-                <!-- 下载源 -->
-                <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,16">
+                <!-- ============================ 下载 ============================ -->
+                <TextBlock Text="下载" Style="{StaticResource SettingsSectionTitle}"/>
+                <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <TextBlock Text="下载源" FontWeight="SemiBold" Style="{StaticResource TextBody}"
-                                   Margin="0,0,0,4"/>
-                        <TextBlock Text="国内网络建议用 BMCLAPI，卡顿或失败时可切回官方源兜底。"
-                                   Style="{StaticResource TextCaption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                        <ComboBox ItemsSource="{Binding Mirrors}"
-                                  SelectedValue="{Binding MirrorId, Mode=TwoWay}"
-                                  SelectedValuePath="Id" DisplayMemberPath="DisplayName"
-                                  HorizontalAlignment="Stretch"/>
-
-                        <TextBlock Text="下载线程数" Style="{StaticResource TextMuted}" Margin="0,20,0,6"/>
-                        <TextBox Text="{Binding DownloadThreads, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="120" HorizontalAlignment="Left" ToolTip="1–32，线程太多容易被镜像限流"/>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="下载源" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="国内建议 BMCLAPI，失败时自动回退官方源"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding Mirrors}"
+                                          SelectedValue="{Binding MirrorId, Mode=TwoWay}"
+                                          SelectedValuePath="Id" DisplayMemberPath="DisplayName"
+                                          HorizontalAlignment="Right" Width="240" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRowLast}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="下载线程数" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="1–32，线程太多容易被镜像限流"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <TextBox Grid.Column="1" HorizontalAlignment="Right" Width="120" VerticalAlignment="Center"
+                                         Text="{Binding DownloadThreads, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 
-                <!-- Java -->
-                <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,16">
+                <!-- ============================ Java ============================ -->
+                <TextBlock Text="Java 运行时" Style="{StaticResource SettingsSectionTitle}"/>
+                <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <TextBlock Text="Java 运行时" FontWeight="SemiBold" Style="{StaticResource TextBody}"
-                                   Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding JavaStatusText}" Style="{StaticResource TextCaption}"
-                                   TextWrapping="Wrap" Margin="0,0,0,12"/>
-
-                        <CheckBox Content="自动管理 Java（缺哪个版本就自动下载 JRE）"
-                                  IsChecked="{Binding AutoManageJava, Mode=TwoWay}" Margin="0,0,0,12"/>
-
-                        <Grid Margin="0,0,0,12">
-                            <TextBox Text="{Binding CustomJavaPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     HorizontalAlignment="Stretch" Margin="0,0,12,0"
-                                     ToolTip="不勾选自动管理时，用这里指定的 java.exe"/>
-                            <Button Content="浏览" Style="{StaticResource SecondaryButton}"
-                                    HorizontalAlignment="Right" Width="80"
-                                    Command="{Binding BrowseJavaCommand}"/>
-                        </Grid>
-
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="下载 Java 21" Style="{StaticResource PrimaryButton}"
-                                    Command="{Binding DownloadJavaCommand}"
-                                    IsEnabled="{Binding IsDownloadingJava, Converter={StaticResource InverseBool}}"/>
-                            <Button Content="打开 runtime 目录" Style="{StaticResource GhostButton}"
-                                    Margin="8,0,0,0" Command="{Binding OpenRuntimeFolderCommand}"/>
-                        </StackPanel>
-
-                        <ProgressBar Value="{Binding JavaProgressValue, Mode=OneWay}" Maximum="100"
-                                     Margin="0,12,0,0"
-                                     Visibility="{Binding IsDownloadingJava, Converter={StaticResource BoolToVisibility}}"/>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="自动管理 Java" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="缺哪个版本就自动下载对应的 JRE"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ToggleButton Grid.Column="1" Style="{StaticResource Switch}"
+                                              HorizontalAlignment="Right" VerticalAlignment="Center"
+                                              IsChecked="{Binding AutoManageJava, Mode=TwoWay}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="当前 Java 状态" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="{Binding JavaStatusText}" Style="{StaticResource TextCaption}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="下载 Java 21" Style="{StaticResource PrimaryButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Command="{Binding DownloadJavaCommand}"
+                                        IsEnabled="{Binding IsDownloadingJava, Converter={StaticResource InverseBool}}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="手动指定 java.exe" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="关闭自动管理后，用这里指定的可执行文件启动"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Grid Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBox Text="{Binding CustomJavaPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,88,0"/>
+                                    <Button Content="浏览" Style="{StaticResource SecondaryButton}"
+                                            HorizontalAlignment="Right" Width="80"
+                                            Command="{Binding BrowseJavaCommand}"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRowLast}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="runtime 目录" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="自托管的 JRE 都装在这里，可以整删"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <Button Content="打开 runtime 目录" Style="{StaticResource SecondaryButton}"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            Command="{Binding OpenRuntimeFolderCommand}"/>
+                                    <ProgressBar Value="{Binding JavaProgressValue, Mode=OneWay}" Maximum="100"
+                                                 Margin="0,10,0,0" HorizontalAlignment="Stretch"
+                                                 Visibility="{Binding IsDownloadingJava, Converter={StaticResource BoolToVisibility}}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 
-                <!-- 启动参数 -->
-                <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,16">
+                <!-- ============================ 启动 ============================ -->
+                <TextBlock Text="启动" Style="{StaticResource SettingsSectionTitle}"/>
+                <Border Style="{StaticResource SettingsGroup}">
                     <StackPanel>
-                        <TextBlock Text="启动参数" FontWeight="SemiBold" Style="{StaticResource TextBody}"
-                                   Margin="0,0,0,12"/>
-
-                        <TextBlock Text="最大内存" Style="{StaticResource TextMuted}" Margin="0,0,0,6"/>
-                        <ComboBox ItemsSource="{Binding MemoryOptions}"
-                                  SelectedItem="{Binding MaxMemoryMb, Mode=TwoWay}"
-                                  Width="200" HorizontalAlignment="Left" Margin="0,0,0,16"/>
-
-                        <CheckBox Content="自定义游戏窗口尺寸" Margin="0,0,0,12"
-                                  IsChecked="{Binding UseCustomResolution, Mode=TwoWay}"/>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <TextBox Text="{Binding WindowWidth, Mode=TwoWay}" Width="100"
-                                     IsEnabled="{Binding UseCustomResolution}"/>
-                            <TextBlock Text="×" Style="{StaticResource TextMuted}" Margin="10,0"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Text="{Binding WindowHeight, Mode=TwoWay}" Width="100"
-                                     IsEnabled="{Binding UseCustomResolution}"/>
-                        </StackPanel>
-
-                        <TextBlock Text="额外 JVM 参数" Style="{StaticResource TextMuted}" Margin="0,0,0,6"/>
-                        <TextBox Text="{Binding ExtraJvmArgs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 HorizontalAlignment="Stretch"
-                                 ToolTip="例如 -XX:+UseG1GC，多个参数用空格分隔，含空格的路径用引号包裹"/>
-
-                        <CheckBox Content="游戏启动后保持启动器运行" Margin="0,16,0,0"
-                                  IsChecked="{Binding KeepLauncherOpen, Mode=TwoWay}"/>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="最大内存" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="分配给游戏的内存上限"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding MemoryOptions}"
+                                          SelectedItem="{Binding MaxMemoryMb, Mode=TwoWay}"
+                                          Width="200" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="自定义游戏窗口尺寸" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="关掉则使用上一次游戏退出时的尺寸"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ToggleButton Grid.Column="1" Style="{StaticResource Switch}"
+                                              HorizontalAlignment="Right" VerticalAlignment="Center"
+                                              IsChecked="{Binding UseCustomResolution, Mode=TwoWay}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="窗口宽高" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="单位为像素"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                                            VerticalAlignment="Center">
+                                    <TextBox Text="{Binding WindowWidth, Mode=TwoWay}" Width="100"
+                                             IsEnabled="{Binding UseCustomResolution}"/>
+                                    <TextBlock Text="×" Style="{StaticResource TextMuted}" Margin="10,0"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding WindowHeight, Mode=TwoWay}" Width="100"
+                                             IsEnabled="{Binding UseCustomResolution}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="额外 JVM 参数" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="例如 -XX:+UseG1GC；含空格的路径要用引号包起来"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <TextBox Grid.Column="1" VerticalAlignment="Center"
+                                         Text="{Binding ExtraJvmArgs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingsRowLast}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="游戏启动后保持启动器运行" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="关掉则在游戏进程出现后退出启动器"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ToggleButton Grid.Column="1" Style="{StaticResource Switch}"
+                                              HorizontalAlignment="Right" VerticalAlignment="Center"
+                                              IsChecked="{Binding KeepLauncherOpen, Mode=TwoWay}"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 

@@ -199,7 +199,28 @@ public sealed partial class SettingsViewModel : ViewModelBase
             _log.Error("打开 runtime 目录失败：" + ex.Message);
         }
     }
+    [RelayCommand]
+    private void OpenDataFolder()
+    {
+        try
+        {
+            Directory.CreateDirectory(GamePaths.AppDataRoot);
+            Process.Start(new ProcessStartInfo("explorer.exe")
+            {
+                ArgumentList = { GamePaths.AppDataRoot },
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            _log.Error("打开数据目录失败：" + ex.Message);
+        }
+    }
 }
 
-public sealed record MirrorOption(string Id, string DisplayName);
+public sealed record MirrorOption(string Id, string DisplayName)
+{
+    // ComboBox 选中框在部分模板路径下会退回 ToString()，重写保证显示名称
+    public override string ToString() => DisplayName;
+}
 public sealed record JavaOption(string Key, string DisplayName, string Path);
