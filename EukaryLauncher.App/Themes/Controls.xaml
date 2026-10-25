@@ -847,25 +847,50 @@
 
     <!-- 行：悬停显示一块内缩的圆角高亮。
          不要做贴边整行填充——WPF 的 ClipToBounds 只裁矩形不认圆角，
-         首末行的方形背景会以直角溢出分组卡片的圆角。 -->
-    <Style x:Key="SettingsRow" TargetType="Border">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+         首末行的方形背景会以直角溢出分组卡片的圆角。
+         分隔线是独立的 1px 直线，不画在圆角 Border 的边框上（否则两端顺弧线上翘）。 -->
+    <Style x:Key="SettingsRow" TargetType="ContentControl">
+        <Setter Property="Foreground" Value="{StaticResource Text1Brush}"/>
+        <Setter Property="Focusable" Value="False"/>
         <Setter Property="Margin" Value="6,0"/>
-        <Setter Property="Padding" Value="14,14"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-        <Setter Property="SnapsToDevicePixels" Value="True"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource BgHoverBrush}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Grid>
+                        <Border x:Name="Hl" Background="Transparent"
+                                CornerRadius="{StaticResource RadiusControl}"/>
+                        <ContentPresenter Margin="14,14"/>
+                        <Rectangle Height="1" VerticalAlignment="Bottom"
+                                   Fill="{StaticResource BorderBrush}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Hl" Property="Background" Value="{StaticResource BgHoverBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- 分组最后一行：不留尾巴上的线 -->
-    <Style x:Key="SettingsRowLast" TargetType="Border" BasedOn="{StaticResource SettingsRow}">
-        <Setter Property="BorderThickness" Value="0"/>
+    <Style x:Key="SettingsRowLast" TargetType="ContentControl" BasedOn="{StaticResource SettingsRow}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Grid>
+                        <Border x:Name="Hl" Background="Transparent"
+                                CornerRadius="{StaticResource RadiusControl}"/>
+                        <ContentPresenter Margin="14,14"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Hl" Property="Background" Value="{StaticResource BgHoverBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- 行内只读值（版本号、路径等），右对齐 -->

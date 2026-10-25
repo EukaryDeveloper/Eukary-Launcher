@@ -29,7 +29,7 @@
                 <TextBlock Text="应用信息" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <Border Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -39,8 +39,8 @@
                                            VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding Version}" Style="{StaticResource SettingsValue}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -50,8 +50,8 @@
                                            VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding Author}" Style="{StaticResource SettingsValue}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -61,8 +61,8 @@
                                            VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding License}" Style="{StaticResource SettingsValue}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -72,8 +72,8 @@
                                            VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource SettingsValue}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRowLast}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -88,7 +88,7 @@
                                         HorizontalAlignment="Right" VerticalAlignment="Center" Width="80"
                                         Command="{Binding OpenDataFolderCommand}"/>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </StackPanel>
                 </Border>
 
@@ -96,7 +96,7 @@
                 <TextBlock Text="项目" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <Border Style="{StaticResource SettingsRowLast}">
+                        <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -116,7 +116,7 @@
                                             CommandParameter="{Binding RepositoryLink}"/>
                                 </StackPanel>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </StackPanel>
                 </Border>
 
@@ -139,7 +139,7 @@
                 <TextBlock Text="资源来源" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}">
                     <StackPanel>
-                        <Border Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -155,8 +155,8 @@
                                         Command="{Binding OpenLinkCommand}"
                                         CommandParameter="{Binding BmclapiLink}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -172,8 +172,8 @@
                                         Command="{Binding OpenLinkCommand}"
                                         CommandParameter="{Binding AdoptiumLink}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRowLast}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -189,7 +189,7 @@
                                         Command="{Binding OpenLinkCommand}"
                                         CommandParameter="{Binding LicenseLink}"/>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </StackPanel>
                 </Border>
 

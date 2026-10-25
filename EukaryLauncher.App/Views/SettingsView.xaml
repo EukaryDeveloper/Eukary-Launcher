@@ -20,7 +20,7 @@
                 <TextBlock Text="游戏文件" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <Border Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -39,8 +39,8 @@
                                             Command="{Binding BrowseGameDirectoryCommand}"/>
                                 </Grid>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRowLast}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -55,7 +55,7 @@
                                         HorizontalAlignment="Right" Width="80"
                                         Command="{Binding OpenDataFolderCommand}"/>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </StackPanel>
                 </Border>
 
@@ -63,7 +63,7 @@
                 <TextBlock Text="下载" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <Border Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -79,8 +79,8 @@
                                           SelectedValuePath="Id" DisplayMemberPath="DisplayName"
                                           HorizontalAlignment="Right" Width="240" VerticalAlignment="Center"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRowLast}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -94,7 +94,7 @@
                                 <TextBox Grid.Column="1" HorizontalAlignment="Right" Width="120" VerticalAlignment="Center"
                                          Text="{Binding DownloadThreads, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </StackPanel>
                 </Border>
 
@@ -102,7 +102,7 @@
                 <TextBlock Text="Java 运行时" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <Border Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -117,8 +117,8 @@
                                               HorizontalAlignment="Right" VerticalAlignment="Center"
                                               IsChecked="{Binding AutoManageJava, Mode=TwoWay}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -134,8 +134,8 @@
                                         Command="{Binding DownloadJavaCommand}"
                                         IsEnabled="{Binding IsDownloadingJava, Converter={StaticResource InverseBool}}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -154,8 +154,8 @@
                                             Command="{Binding BrowseJavaCommand}"/>
                                 </Grid>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRowLast}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -175,7 +175,7 @@
                                                  Visibility="{Binding IsDownloadingJava, Converter={StaticResource BoolToVisibility}}"/>
                                 </StackPanel>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </StackPanel>
                 </Border>
 
@@ -183,7 +183,7 @@
                 <TextBlock Text="启动" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}">
                     <StackPanel>
-                        <Border Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -198,8 +198,8 @@
                                           SelectedItem="{Binding MaxMemoryMb, Mode=TwoWay}"
                                           Width="200" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -214,8 +214,8 @@
                                               HorizontalAlignment="Right" VerticalAlignment="Center"
                                               IsChecked="{Binding UseCustomResolution, Mode=TwoWay}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -236,8 +236,8 @@
                                              IsEnabled="{Binding UseCustomResolution}"/>
                                 </StackPanel>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRow}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -251,8 +251,8 @@
                                 <TextBox Grid.Column="1" VerticalAlignment="Center"
                                          Text="{Binding ExtraJvmArgs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </Grid>
-                        </Border>
-                        <Border Style="{StaticResource SettingsRowLast}">
+                        </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -267,7 +267,7 @@
                                               HorizontalAlignment="Right" VerticalAlignment="Center"
                                               IsChecked="{Binding KeepLauncherOpen, Mode=TwoWay}"/>
                             </Grid>
-                        </Border>
+                        </ContentControl>
                     </StackPanel>
                 </Border>
 
