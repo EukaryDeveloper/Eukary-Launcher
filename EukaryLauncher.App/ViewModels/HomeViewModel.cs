@@ -157,7 +157,7 @@ public sealed partial class HomeViewModel : ViewModelBase
             var version = await EnsureVersionAsync(SelectedVersionId, _cts.Token);
             if (version is null)
             {
-                StatusText = "版本安装失败，请到「版本列表」页重试";
+                StatusText = "版本安装失败，请到「下载」页重试";
                 return;
             }
 

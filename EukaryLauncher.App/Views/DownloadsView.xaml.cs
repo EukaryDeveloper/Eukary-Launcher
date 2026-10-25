@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace EukaryLauncher.App.Views;
 
-public partial class VersionsView : UserControl
+public partial class DownloadsView : UserControl
 {
-    public VersionsView()
+    public DownloadsView()
     {
         InitializeComponent();
     }

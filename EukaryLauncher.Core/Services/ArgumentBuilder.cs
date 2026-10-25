@@ -11,7 +11,7 @@ namespace EukaryLauncher.Core.Services;
 public static class ArgumentBuilder
 {
     public const string LauncherName = "EukaryLauncher";
-    public const string LauncherVersion = "0.1.0";
+    public const string LauncherVersion = "0.2.0";
 
     /// <summary>classpath 分隔符：Windows 是 ;，其他平台是 :</summary>
     public static string ClassPathSeparator => OperatingSystem.IsWindows() ? ";" : ":";
@@ -25,10 +25,12 @@ public static class ArgumentBuilder
         {
             if (!RuleEvaluator.IsAllowed(lib.Rules)) continue;
 
-            var artifact = lib.Downloads?.Artifact;
-            if (artifact is null) continue;
+            // Mojang 官方格式有 downloads.artifact；Fabric / Forge 的 maven 坐标格式
+            // 没有这个字段，按坐标直接推路径（安装器用的同一套规则）。
+            var mavenPath = lib.Downloads?.Artifact is { } artifact
+                ? artifact.Path ?? VersionInstaller.MavenPathFromName(lib.Name)
+                : VersionInstaller.MavenPathFromName(lib.Name);
 
-            var mavenPath = artifact.Path ?? VersionInstaller.MavenPathFromName(lib.Name);
             var full = Path.Combine(paths.LibrariesDir, mavenPath.Replace('/', Path.DirectorySeparatorChar));
             if (File.Exists(full)) entries.Add(Path.GetFullPath(full));
         }

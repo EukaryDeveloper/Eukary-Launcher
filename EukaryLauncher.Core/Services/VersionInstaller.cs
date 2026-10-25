@@ -152,20 +152,53 @@ public sealed class VersionInstaller
             return downloaded;
         });
 
-        // 2. 主 jar
-        Report(InstallStage.ClientJar, $"下载 {entry.Id}.jar");
-        var client = version.ClientDownload
-                     ?? throw new InvalidOperationException($"版本 {entry.Id} 没有 client 下载信息。");
-        var jarUrl = _mirror.GetClientJarUrl(entry.Id, client.Url!);
-        await _downloader.DownloadFileAsync(
-            new DownloadTask(jarUrl, _paths.VersionJarPath(entry.Id), client.Sha1, client.Size)
-            {
-                DisplayName = $"{entry.Id}.jar",
-                FallbackUrls = new[] { _fallback.GetClientJarUrl(entry.Id, client.Url!) },
-            },
-            new Progress<FileProgress>(p => Report(InstallStage.ClientJar, $"下载 {p.FileName}",
-                0, 1, p.ReceivedBytes, p.TotalBytes)),
-            ct);
+        return await InstallCoreAsync(version, entry.Id, progress, ct, Report);
+    }
+
+    /// <summary>把一份版本 JSON 落到 versions/&lt;versionId&gt;/&lt;versionId&gt;.json。</summary>
+    public async Task SaveVersionJsonAsync(string versionId, VersionJson version, CancellationToken ct = default)
+    {
+        var dest = _paths.VersionJsonPath(versionId);
+        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+        var json = System.Text.Json.JsonSerializer.Serialize(version, JsonOptions.Default);
+        await File.WriteAllTextAsync(dest, json, ct);
+    }
+
+    /// <summary>
+    /// 按给定的（已合并的）版本 JSON 安装到 versionId 目录。
+    /// 官方清单走 <see cref="InstallAsync(EukaryLauncher.Core.Models.VersionManifestEntry,System.IProgress{EukaryLauncher.Core.Services.InstallProgress}?,System.Threading.CancellationToken)"/>，
+    /// Fabric / Forge 这类自带版本 JSON 的加载器直接调这里。
+    /// </summary>
+    public async Task<VersionJson> InstallCoreAsync(
+        VersionJson version,
+        string versionId,
+        IProgress<InstallProgress>? progress = null,
+        CancellationToken ct = default,
+        Action<InstallStage, string, int, int, long, long?, double>? reporter = null)
+    {
+        void Report(InstallStage stage, string msg, int done = 0, int total = 0, long recv = 0, long? totalBytes = null, double speed = 0)
+        {
+            progress?.Report(new InstallProgress(stage, msg, done, total, recv, totalBytes, speed));
+            reporter?.Invoke(stage, msg, done, total, recv, totalBytes, speed);
+        }
+
+
+        // 2. 主 jar。加载器自带的版本 JSON（Fabric 之类）没有 client 下载项，跳过即可——
+        //    它会继承原版的主 jar，由调用方负责把 jar 放到位。
+        if (version.ClientDownload is { } client && !string.IsNullOrEmpty(client.Url))
+        {
+            Report(InstallStage.ClientJar, $"下载 {versionId}.jar");
+            var jarUrl = _mirror.GetClientJarUrl(versionId, client.Url);
+            await _downloader.DownloadFileAsync(
+                new DownloadTask(jarUrl, _paths.VersionJarPath(versionId), client.Sha1, client.Size)
+                {
+                    DisplayName = $"{versionId}.jar",
+                    FallbackUrls = new[] { _fallback.GetClientJarUrl(versionId, client.Url) },
+                },
+                new Progress<FileProgress>(p => Report(InstallStage.ClientJar, $"下载 {p.FileName}",
+                    0, 1, p.ReceivedBytes, p.TotalBytes)),
+                ct);
+        }
 
         // 3. libraries
         var libs = version.Libraries
@@ -176,17 +209,39 @@ public sealed class VersionInstaller
         foreach (var lib in libs)
         {
             var artifact = lib.Downloads?.Artifact;
-            if (artifact is null || string.IsNullOrEmpty(artifact.Url)) continue;
-
-            var mavenPath = artifact.Path ?? MavenPathFromName(lib.Name);
-            libTasks.Add(new DownloadTask(
-                _mirror.GetLibraryUrl(artifact.Url, mavenPath),
-                Path.Combine(_paths.LibrariesDir, mavenPath.Replace('/', Path.DirectorySeparatorChar)),
-                artifact.Sha1, artifact.Size)
+            if (artifact is { } a && !string.IsNullOrEmpty(a.Url))
             {
-                DisplayName = Path.GetFileName(mavenPath),
-                FallbackUrls = new[] { _fallback.GetLibraryUrl(artifact.Url, mavenPath) },
-            });
+                // Mojang 官方格式：downloads.artifact 里带完整 URL 与校验值
+                var mavenPath = a.Path ?? MavenPathFromName(lib.Name);
+                libTasks.Add(new DownloadTask(
+                    _mirror.GetLibraryUrl(a.Url, mavenPath),
+                    Path.Combine(_paths.LibrariesDir, mavenPath.Replace('/', Path.DirectorySeparatorChar)),
+                    a.Sha1, a.Size)
+                {
+                    DisplayName = Path.GetFileName(mavenPath),
+                    FallbackUrls = new[] { _fallback.GetLibraryUrl(a.Url, mavenPath) },
+                });
+            }
+            else
+            {
+                // Fabric / Forge 的 maven 坐标格式：只有 name + 仓库基址，按坐标拼 URL。
+                // 这种来源大多没有 SHA1，只能靠 HTTP 成功与否兜底。
+                var mavenPath = MavenPathFromName(lib.Name);
+                var baseUrl = string.IsNullOrWhiteSpace(lib.Url)
+                    ? "https://libraries.minecraft.net/"
+                    : lib.Url;
+                if (!baseUrl.EndsWith('/')) baseUrl += '/';
+                var url = baseUrl + mavenPath;
+
+                libTasks.Add(new DownloadTask(
+                    _mirror.GetLibraryUrl(url, mavenPath),
+                    Path.Combine(_paths.LibrariesDir, mavenPath.Replace('/', Path.DirectorySeparatorChar)),
+                    lib.Sha1, null)
+                {
+                    DisplayName = Path.GetFileName(mavenPath),
+                    FallbackUrls = new[] { url },
+                });
+            }
 
             // natives jar
             if (lib.Natives is not null &&
@@ -216,7 +271,7 @@ public sealed class VersionInstaller
 
         // 4. 解压 natives
         Report(InstallStage.Natives, "解压本地库");
-        ExtractNatives(version, entry.Id);
+        ExtractNatives(version, versionId);
 
         // 5. 资产索引 + 资产
         if (version.AssetIndex is { } index && !string.IsNullOrEmpty(index.Id))
@@ -277,7 +332,7 @@ public sealed class VersionInstaller
                 null, ct);
         }
 
-        Report(InstallStage.Done, $"{entry.Id} 安装完成", 1, 1, 1, 1);
+        Report(InstallStage.Done, $"{versionId} 安装完成", 1, 1, 1, 1);
         return version;
     }
 

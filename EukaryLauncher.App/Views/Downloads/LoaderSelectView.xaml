@@ -1,0 +1,83 @@
+<UserControl x:Class="EukaryLauncher.App.Views.Downloads.LoaderSelectView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:EukaryLauncher.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:LoaderSelectViewModel}"
+             FontFamily="{StaticResource FontSans}">
+    <Grid Margin="28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 返回 + 标题 -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,18">
+            <Button Content="← 返回" Style="{StaticResource GhostButton}"
+                    Height="28" Padding="10,0" MinWidth="0" FontSize="{StaticResource FontSizeXs}"
+                    HorizontalAlignment="Left" Command="{Binding BackCommand}"/>
+            <TextBlock Margin="0,12,0,0" FontSize="{StaticResource FontSizeXl}" FontWeight="Bold"
+                       Foreground="{DynamicResource Text1Brush}">
+                <Run Text="安装 "/>
+                <Run Text="{Binding GameVersion}"/>
+            </TextBlock>
+            <TextBlock Text="{Binding StatusText}" Style="{StaticResource TextMuted}" Margin="0,6,0,0"/>
+        </StackPanel>
+
+        <!-- 加载器列表 -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="选择模组加载器" Style="{StaticResource TextMuted}"
+                           FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+                <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource LoaderRowButton}" Margin="0,0,0,10"
+                                    IsEnabled="{Binding Selectable}"
+                                    Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}">
+                                <Grid>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontSize="{StaticResource FontSizeBase}"
+                                                   FontWeight="SemiBold" Foreground="{DynamicResource Text1Brush}"/>
+                                        <TextBlock Text="{Binding Hint}" Style="{StaticResource TextCaption}"
+                                                   Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Version}" Style="{StaticResource TextMuted}"
+                                                   VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                        <TextBlock Text="{Binding StateText}" VerticalAlignment="Center"
+                                                   FontSize="{StaticResource FontSizeSm}"
+                                                   Foreground="{DynamicResource Text2Brush}" MinWidth="56"
+                                                   TextAlignment="Right"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="也可以不选加载器，直接安装原版。"
+                           Style="{StaticResource TextCaption}" Margin="0,6,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 底部操作 -->
+        <Border Grid.Row="2" Margin="0,18,0,0" Padding="0,16,0,0"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <StackPanel>
+                <TextBlock Text="{Binding StatusText}" Style="{StaticResource TextCaption}"
+                           Visibility="Collapsed"/>
+                <Button Content="开始下载" Style="{StaticResource PrimaryButton}"
+                        Height="{StaticResource ControlHeightLg}" FontSize="{StaticResource FontSizeBase}"
+                        HorizontalAlignment="Right" MinWidth="140"
+                        Command="{Binding StartCommand}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

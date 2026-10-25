@@ -26,7 +26,9 @@
 
 ---
 
-## 当前进度：M1 最小可用启动器 ✅
+## 当前进度：M1 最小可用启动器 ✅ · M3 下载中心（进行中）
+
+### M1 ✅
 
 | M1 验收项 | 状态 |
 |---|---|
@@ -41,6 +43,14 @@
 - Java 17 JRE 由 Adoptium 自动下载并解压到 `runtime/java-17/`
 - 游戏进程真实启动到主菜单，日志无 `ClassNotFoundException` / `NoClassDefFoundError` / `no lwjgl in java.library.path`
 - 离线模式下出现 `InvalidCredentialsException: 401` 属预期（假 token 无法取正版 user properties），不影响单机游玩
+
+### M3 下载中心（v0.2.0，进行中）
+
+- 「下载」页 Top Tabs：原版游戏 / 模组 / 整合包 / 数据包 / 资源包 / 光影包 / 下载队列（后四类为占位）
+- 原版游戏点「继续」→ 模组加载器选择（Forge / NeoForge / Fabric / OptiFine，互斥联动），确认后才入队
+- **Fabric Loader 自动安装已可用**：meta.fabricmc.net 拉取 profile → 依赖库下载 → 继承原版主 jar，已实测真实启动
+- 模组：Modrinth 搜索（按名称 / 游戏版本 / 加载器筛选），版本页按加载器 × 游戏版本分组，安装前校验游戏版本与加载器
+- 统一串行下载队列：分步进度、失败保留可重试、完成销毁并 Toast 通知
 
 ---
 

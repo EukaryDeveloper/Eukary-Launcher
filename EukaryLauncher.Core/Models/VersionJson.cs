@@ -47,9 +47,11 @@ public sealed class VersionJson
     public string? Type { get; set; }
 
     [JsonPropertyName("time")]
+    [JsonConverter(typeof(LenientDateTimeOffsetConverter))]
     public DateTimeOffset? Time { get; set; }
 
     [JsonPropertyName("releaseTime")]
+    [JsonConverter(typeof(LenientDateTimeOffsetConverter))]
     public DateTimeOffset? ReleaseTime { get; set; }
 
     [JsonPropertyName("minimumLauncherVersion")]

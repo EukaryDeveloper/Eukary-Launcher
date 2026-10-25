@@ -24,6 +24,14 @@ public sealed class GamePaths
     public string ShaderPacksDir => Path.Combine(Root, "shaderpacks");
     public string SavesDir => Path.Combine(Root, "saves");
 
+    public string ModsRoot => Path.Combine(Root, "mods");
+
+    /// <summary>
+    /// 模组按游戏版本分目录放。M4 之前还没有真正的实例系统，
+    /// 全部塞进 mods/ 会让不同版本的模组互相污染，先按版本隔离。
+    /// </summary>
+    public string ModsDir(string gameVersion) => Path.Combine(ModsRoot, gameVersion);
+
     public string VersionDir(string versionId) => Path.Combine(VersionsDir, versionId);
     public string VersionJsonPath(string versionId) => Path.Combine(VersionDir(versionId), versionId + ".json");
     public string VersionJarPath(string versionId) => Path.Combine(VersionDir(versionId), versionId + ".jar");

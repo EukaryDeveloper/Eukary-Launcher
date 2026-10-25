@@ -8,7 +8,7 @@ namespace EukaryLauncher.App.ViewModels;
 /// </summary>
 public sealed partial class AboutViewModel : ViewModelBase
 {
-    public string Version => "0.1.0 (M1)";
+    public string Version => "0.2.0 (M2)";
     public string Disclaimer => "本启动器与 Microsoft / Mojang 无任何关联。Minecraft 是 Mojang Synergies AB 的商标。";
     public string License => "GPL-3.0";
     public string Author => "DL_Hachi";

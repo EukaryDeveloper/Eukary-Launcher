@@ -294,7 +294,7 @@ public sealed class DownloadService : IDisposable
 
 public static class HttpClientFactory
 {
-    public const string UserAgent = "EukaryLauncher/0.1.0 (+https://github.com/eukary-launcher/EukaryLauncher)";
+    public const string UserAgent = "EukaryLauncher/0.2.0 (+https://github.com/EukaryDeveloper/Eukary-Launcher)";
 
     public static HttpClient Create()
     {

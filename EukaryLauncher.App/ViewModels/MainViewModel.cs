@@ -7,7 +7,7 @@ namespace EukaryLauncher.App.ViewModels;
 public enum NavPage
 {
     Home,
-    Versions,
+    Download,
     Console,
     Settings,
     About,
@@ -22,7 +22,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         _settings = settings;
         Home = new HomeViewModel(_settings);
-        Versions = new VersionsViewModel(_settings);
+        Download = new DownloadsViewModel();
         Console = new ConsoleViewModel();
         Settings = new SettingsViewModel(_settings);
         About = new AboutViewModel();
@@ -31,7 +31,7 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     public HomeViewModel Home { get; }
-    public VersionsViewModel Versions { get; }
+    public DownloadsViewModel Download { get; }
     public ConsoleViewModel Console { get; }
     public SettingsViewModel Settings { get; }
     public AboutViewModel About { get; }
@@ -47,7 +47,7 @@ public sealed partial class MainViewModel : ObservableObject
         ViewModelBase vm = value switch
         {
             NavPage.Home => Home,
-            NavPage.Versions => Versions,
+            NavPage.Download => Download,
             NavPage.Console => Console,
             NavPage.Settings => Settings,
             _ => About,
@@ -59,7 +59,7 @@ public sealed partial class MainViewModel : ObservableObject
     public IReadOnlyList<NavItem> NavItems { get; } = new[]
     {
         new NavItem(NavPage.Home, "主页", "\uE10F"),
-        new NavItem(NavPage.Versions, "版本列表", "\uE7B8"),
+        new NavItem(NavPage.Download, "下载", "\uE896"),
         new NavItem(NavPage.Console, "日志", "\uE756"),
         new NavItem(NavPage.Settings, "设置", "\uE713"),
         new NavItem(NavPage.About, "关于", "\uE946"),

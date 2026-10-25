@@ -82,7 +82,7 @@
                     <ComboBox ItemsSource="{Binding InstalledVersions}"
                               SelectedItem="{Binding SelectedVersionId, Mode=TwoWay}"
                               Margin="0,0,0,16" HorizontalAlignment="Stretch"
-                              ToolTip="已安装的版本；需要装新版本请到「版本列表」页"/>
+                              ToolTip="已安装的版本；需要装新版本请到「下载」页"/>
 
                     <TextBlock Text="玩家名（离线模式）" Style="{StaticResource TextMuted}" Margin="0,0,0,6"/>
                     <TextBox Text="{Binding PlayerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

@@ -1,0 +1,131 @@
+<UserControl x:Class="EukaryLauncher.App.Views.Downloads.QueueTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:EukaryLauncher.App.ViewModels"
+             xmlns:svc="clr-namespace:EukaryLauncher.App.Services"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:QueueTabViewModel}"
+             FontFamily="{StaticResource FontSans}">
+    <Grid Margin="28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="{Binding SummaryText}" Style="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+            <Button Content="清空已完成" Style="{StaticResource SmallButton}"
+                    HorizontalAlignment="Right" Command="{Binding ClearFinishedCommand}"/>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <!-- 空态 -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
+                <Grid Width="40" Height="40" HorizontalAlignment="Center" Margin="0,0,0,14" Opacity="0.45">
+                    <Ellipse Stroke="{DynamicResource BorderStrongBrush}" StrokeThickness="2"/>
+                    <Ellipse Width="12" Height="12" Fill="{DynamicResource BorderStrongBrush}"/>
+                </Grid>
+                <TextBlock Text="下载队列是空的" FontSize="{StaticResource FontSizeBase}"
+                           Foreground="{DynamicResource Text2Brush}" HorizontalAlignment="Center"/>
+                <TextBlock Text="在「原版游戏」点继续、或在模组里选一个版本，任务就会排队到这里。"
+                           Style="{StaticResource TextCaption}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Jobs}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type svc:DownloadJob}">
+                            <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <!-- 标题区 -->
+                                    <Grid Margin="16,14,16,10">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontSize="{StaticResource FontSizeBase}"
+                                                       FontWeight="SemiBold" Foreground="{DynamicResource Text1Brush}"/>
+                                            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource TextCaption}"
+                                                       Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding StatusText}" Style="{StaticResource TextMuted}"
+                                                       HorizontalAlignment="Right"/>
+                                            <TextBlock Text="点击卡片重新排队" Style="{StaticResource TextCaption}"
+                                                       HorizontalAlignment="Right" Margin="0,3,0,0"
+                                                       Foreground="{DynamicResource WarningBrush}"
+                                                       Visibility="{Binding CanRetry, Converter={StaticResource BoolToVisibility}}"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- 每个资源的完成情况 -->
+                                    <Button Style="{StaticResource CardButton}" Padding="0" BorderThickness="0"
+                                            Background="Transparent"
+                                            Command="{Binding DataContext.RetryCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
+                                        <StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Steps}" Margin="16,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type svc:DownloadStep}">
+                                                        <Grid Margin="0,0,0,6">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="140"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                                                       Style="{StaticResource TextMuted}"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding Detail}"
+                                                                       Style="{StaticResource TextCaption}"
+                                                                       VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       Margin="8,0"/>
+                                                            <TextBlock Grid.Column="2" Text="{Binding StatusText}"
+                                                                       Style="{StaticResource TextCaption}"
+                                                                       VerticalAlignment="Center" MinWidth="64"
+                                                                       TextAlignment="Right"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <!-- 失败原因 -->
+                                            <Border Margin="16,4,16,0" Padding="10,8"
+                                                    Background="{StaticResource DangerTintBrush}"
+                                                    CornerRadius="{StaticResource RadiusSm}"
+                                                    Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVisibility}}">
+                                                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap"
+                                                           FontSize="{StaticResource FontSizeXs}"
+                                                           Foreground="{DynamicResource DangerBrush}"/>
+                                            </Border>
+
+                                            <!-- 底部总进度 -->
+                                            <Grid Margin="16,10,16,14">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid Grid.Row="0" Margin="0,0,0,6">
+                                                    <TextBlock Text="{Binding CurrentText}"
+                                                               Style="{StaticResource TextCaption}"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock HorizontalAlignment="Right"
+                                                               Style="{StaticResource TextCaption}">
+                                                        <Run Text="{Binding OverallPercent, Mode=OneWay}"/>
+                                                        <Run Text="%"/>
+                                                    </TextBlock>
+                                                </Grid>
+                                                <ProgressBar Grid.Row="1" Value="{Binding OverallProgress, Mode=OneWay}"
+                                                             Maximum="100"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

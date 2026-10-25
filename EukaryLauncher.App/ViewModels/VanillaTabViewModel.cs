@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using System.IO;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EukaryLauncher.App.Services;
@@ -14,6 +14,11 @@ public sealed class InstalledVersionCard
     public required string TypeLabel { get; init; }
     public required string SizeText { get; init; }
     public required string ReleaseTimeText { get; init; }
+    public IReadOnlyList<string> Loaders { get; init; } = Array.Empty<string>();
+
+    public string LoadersText => Loaders.Count == 0
+        ? ""
+        : string.Join(" · ", Loaders.Select(LoaderIds.DisplayName));
 }
 
 public sealed class AvailableVersionRow
@@ -33,22 +38,22 @@ public sealed class AvailableVersionRow
     };
 }
 
-/// <summary>版本列表页：已安装卡片 + 可下载清单。</summary>
-public sealed partial class VersionsViewModel : ViewModelBase
+/// <summary>
+/// 下载页 · 原版游戏：已安装卡片 + 可下载清单。
+/// 点「继续」不再直接下载，而是先去选模组加载器，确认后才入队。
+/// </summary>
+public sealed partial class VanillaTabViewModel : ViewModelBase
 {
-    private readonly SettingsService _settings;
-    private readonly GameContext _context;
+    private readonly GameContext _context = AppServices.Context;
     private readonly LogService _log = LogService.Instance;
 
-    private CancellationTokenSource? _cts;
     private List<AvailableVersionRow> _allRows = new();
 
-    public VersionsViewModel(SettingsService settings)
+    public event Action<AvailableVersionRow>? ContinueRequested;
+
+    public VanillaTabViewModel()
     {
-        _settings = settings;
-        _context = AppServices.Context;
-        _context.InstalledVersionsChanged += () =>
-            AppServices.Post(RefreshInstalled);
+        _context.InstalledVersionsChanged += () => AppServices.Post(RefreshInstalled);
     }
 
     public ObservableCollection<InstalledVersionCard> Installed { get; } = new();
@@ -58,10 +63,7 @@ public sealed partial class VersionsViewModel : ViewModelBase
     [ObservableProperty] private bool showSnapshots;
     [ObservableProperty] private bool showOldVersions;
     [ObservableProperty] private bool isLoadingManifest;
-    [ObservableProperty] private bool isInstalling;
     [ObservableProperty] private string statusText = "";
-    [ObservableProperty] private double progressValue;
-    [ObservableProperty] private string progressText = "";
     [ObservableProperty] private AvailableVersionRow? selectedRow;
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -71,8 +73,10 @@ public sealed partial class VersionsViewModel : ViewModelBase
     public override async Task OnNavigatedAsync()
     {
         RefreshInstalled();
-        await LoadManifestAsync();
+        if (_allRows.Count == 0) await LoadManifestAsync();
     }
+
+    public IReadOnlyList<string> VersionIds => _allRows.Select(r => r.Id).ToList();
 
     private void RefreshInstalled()
     {
@@ -83,6 +87,9 @@ public sealed partial class VersionsViewModel : ViewModelBase
             var jarPath = _context.Paths.VersionJarPath(id);
             var size = File.Exists(jarPath) ? new FileInfo(jarPath).Length : 0;
 
+            var gameVersion = json is null ? null : LoaderDetector.DetectGameVersion(id, json);
+            var loaders = json is null ? Array.Empty<string>() : LoaderDetector.Detect(json);
+
             Installed.Add(new InstalledVersionCard
             {
                 Id = id,
@@ -92,13 +99,16 @@ public sealed partial class VersionsViewModel : ViewModelBase
                     "snapshot" => "快照",
                     _ => "未知",
                 },
-                SizeText = FormatBytes(size),
+                SizeText = Humanize.Bytes(size),
                 ReleaseTimeText = json?.ReleaseTime?.LocalDateTime.ToString("yyyy-MM-dd") ?? "—",
+                Loaders = loaders,
             });
+
+            _ = gameVersion;
         }
     }
 
-    private async Task LoadManifestAsync()
+    public async Task LoadManifestAsync()
     {
         if (IsLoadingManifest) return;
         IsLoadingManifest = true;
@@ -152,54 +162,12 @@ public sealed partial class VersionsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task InstallAsync(AvailableVersionRow? row)
+    private void Continue(AvailableVersionRow? row)
     {
         if (row is null) return;
-        if (IsInstalling) return;
-
-        _cts = new CancellationTokenSource();
-        IsInstalling = true;
-        ProgressValue = 0;
-        StatusText = $"安装 {row.Id}…";
-
-        var progress = new Progress<InstallProgress>(p =>
-        {
-            ProgressText = p.Message;
-            ProgressValue = p.TotalFiles > 0
-                ? Math.Clamp(p.CompletedFiles * 100.0 / p.TotalFiles, 0, 100)
-                : 0;
-            StatusText = $"{row.Id} · {p.Message}";
-        });
-
-        try
-        {
-            await _context.Installer.InstallAsync(row.Id, progress, _cts.Token);
-
-            _context.RefreshInstalled();
-            RefreshInstalled();
-            ApplyFilter();
-            StatusText = $"{row.Id} 安装完成";
-            _log.Info($"{row.Id} 安装完成");
-        }
-        catch (OperationCanceledException)
-        {
-            StatusText = "已取消安装";
-        }
-        catch (Exception ex)
-        {
-            StatusText = "安装失败：" + ex.Message;
-            _log.Error($"安装 {row.Id} 失败：{ex}");
-        }
-        finally
-        {
-            IsInstalling = false;
-            ProgressValue = 0;
-            ProgressText = "";
-        }
+        SelectedRow = row;
+        ContinueRequested?.Invoke(row);
     }
-
-    [RelayCommand]
-    private void CancelInstall() => _cts?.Cancel();
 
     [RelayCommand]
     private void OpenGameFolder()
@@ -207,7 +175,7 @@ public sealed partial class VersionsViewModel : ViewModelBase
         try
         {
             Directory.CreateDirectory(_context.Paths.Root);
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe")
+            Process.Start(new ProcessStartInfo("explorer.exe")
             {
                 ArgumentList = { _context.Paths.Root },
                 UseShellExecute = true,
@@ -250,17 +218,10 @@ public sealed partial class VersionsViewModel : ViewModelBase
         ApplyFilter();
     }
 
-    public static string FormatBytes(long bytes)
+    /// <summary>给加载器页用：把这一版对应的清单项找出来。</summary>
+    public async Task<VersionManifestEntry?> FindEntryAsync(string versionId)
     {
-        if (bytes <= 0) return "—";
-        string[] units = { "B", "KB", "MB", "GB", "TB" };
-        var value = (double)bytes;
-        var unit = 0;
-        while (value >= 1024 && unit < units.Length - 1)
-        {
-            value /= 1024;
-            unit++;
-        }
-        return $"{value:0.##} {units[unit]}";
+        var manifest = await _context.Installer.FetchManifestAsync(false);
+        return manifest.Versions.FirstOrDefault(v => string.Equals(v.Id, versionId, StringComparison.Ordinal));
     }
 }

@@ -26,7 +26,8 @@
                 <TranslateTransform/>
             </Border.RenderTransform>
             <ContentPresenter x:Name="Cp"
-                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="Center"
                               Margin="{TemplateBinding Padding}"
                               RecognizesAccessKey="True"
                               TextBlock.Foreground="{TemplateBinding Foreground}"/>
@@ -646,6 +647,90 @@
                             CornerRadius="7" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
                         <ContentPresenter TextBlock.Foreground="{TemplateBinding Foreground}"
                                           VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource BgHoverBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Text1Brush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentTintBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 可点的整块卡片（模组卡片、加载器行、队列卡片）：内容撑满，hover 有反馈 -->
+    <Style x:Key="CardButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource Text1Brush}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSm}"/>
+        <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
+        <Setter Property="Background" Value="{StaticResource BgSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusMd}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource BgHoverBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <!-- 选中态由 VM 的 IsSelected 驱动 -->
+            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentTintBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- 加载器选择行：整行可点，右侧显示状态（获取中 / 可以添加 / 无 / 已安装） -->
+    <Style x:Key="LoaderRowButton" TargetType="Button" BasedOn="{StaticResource CardButton}">
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="Foreground" Value="{StaticResource Text1Brush}"/>
+    </Style>
+
+    <!-- 筛选胶囊：模组页的版本 / 加载器筛选条 -->
+    <Style x:Key="ChipItem" TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{StaticResource Text2Brush}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXs}"/>
+        <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,8,8"/>
+        <Setter Property="Padding" Value="12,5"/>
+        <Setter Property="Background" Value="{StaticResource BgElevatedBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource RadiusPill}"
+                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <ContentPresenter TextBlock.Foreground="{TemplateBinding Foreground}"
+                                          HorizontalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">

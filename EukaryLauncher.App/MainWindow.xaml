@@ -6,6 +6,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:vm="clr-namespace:EukaryLauncher.App.ViewModels"
         xmlns:views="clr-namespace:EukaryLauncher.App.Views"
+        xmlns:svc="clr-namespace:EukaryLauncher.App.Services"
         xmlns:anim="clr-namespace:EukaryLauncher.App.Animation"
         mc:Ignorable="d"
         Title="真核启动器"
@@ -37,11 +38,54 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Toast：左下角堆叠，左侧竖条按类型着色 -->
+        <DataTemplate DataType="{x:Type svc:ToastItem}">
+            <Border Background="{StaticResource BgElevatedBrush}"
+                    BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                    CornerRadius="{StaticResource RadiusMd}" Padding="0" Margin="0,8,0,0"
+                    MinWidth="260" MaxWidth="400" SnapsToDevicePixels="True">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" ShadowDepth="2"/>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TranslateTransform/>
+                </Border.RenderTransform>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Rectangle Grid.Column="0" Margin="0">
+                        <Rectangle.Style>
+                            <Style TargetType="Rectangle">
+                                <Setter Property="Fill" Value="{StaticResource InfoBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Kind}" Value="Success">
+                                        <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Kind}" Value="Warning">
+                                        <Setter Property="Fill" Value="{StaticResource WarningBrush}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Kind}" Value="Error">
+                                        <Setter Property="Fill" Value="{StaticResource DangerBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Rectangle.Style>
+                    </Rectangle>
+                    <TextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap"
+                               FontSize="{StaticResource FontSizeSm}"
+                               Foreground="{DynamicResource Text1Brush}"
+                               Margin="12,10"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:HomeViewModel}">
             <views:HomeView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:VersionsViewModel}">
-            <views:VersionsView/>
+        <DataTemplate DataType="{x:Type vm:DownloadsViewModel}">
+            <views:DownloadsView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ConsoleViewModel}">
             <views:ConsoleView/>
@@ -141,7 +185,7 @@
                         </ListBox>
 
                         <TextBlock Grid.Row="1" Margin="12,0,0,4"
-                                   Text="EKL v0.1.0 · M1"
+                                   Text="EKL v0.2.0 · M2"
                                    Style="{StaticResource TextCaption}"/>
                     </Grid>
                 </Border>
@@ -151,6 +195,13 @@
                                 Content="{Binding CurrentViewModel}"
                                 Focusable="False"/>
             </Grid>
+
+            <!-- 通知浮层：不拦截鼠标事件，避免挡住下面的操作 -->
+            <ItemsControl Grid.Row="0" Grid.RowSpan="2"
+                          ItemsSource="{Binding Source={x:Static svc:AppServices.Toasts}}"
+                          HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                          Margin="0,0,20,20" IsHitTestVisible="False"
+                          Focusable="False"/>
         </Grid>
     </Border>
 </Window>
