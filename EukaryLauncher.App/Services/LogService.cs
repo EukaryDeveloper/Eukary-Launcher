@@ -63,14 +63,28 @@ public sealed class LogService
     {
         var entry = new LogEntry(DateTimeOffset.Now, level, message);
 
+        // 落盘与线程无关，先写掉；写失败不能影响主流程
+        try { _file?.WriteLine(entry.Display); } catch { /* 日志写失败不能影响主流程 */ }
+
+        // Entries 绑定在日志页的 ItemsControl 上，只能在 UI 线程修改。
+        // 后台线程打日志很常见（下载、删除版本、游戏输出）——跨线程 Add 会把
+        // ItemsControl 的内部计数搞乱，之后 UI 一刷新就抛
+        // "ItemsControl 与其项源不一致"，且会在全局异常处理器里二次引爆进程。
+        var dispatcher = AppServices.UiDispatcher;
+        if (dispatcher is null)
+            AddToEntries(entry);            // 启动早期还没有 Dispatcher，此时 UI 未渲染，直接加
+        else
+            dispatcher.BeginInvoke(() => AddToEntries(entry));
+    }
+
+    private void AddToEntries(LogEntry entry)
+    {
         lock (_gate)
         {
             _entries.Add(entry);
             while (_entries.Count > MaxEntries)
                 _entries.RemoveAt(0);
         }
-
-        try { _file?.WriteLine(entry.Display); } catch { /* 日志写失败不能影响主流程 */ }
     }
 
     public void Debug(string m) => Add(LogLevel.Debug, m);
@@ -83,6 +97,13 @@ public sealed class LogService
 
     public void Clear()
     {
-        lock (_gate) _entries.Clear();
+        var dispatcher = AppServices.UiDispatcher;
+        if (dispatcher is null)
+            lock (_gate) _entries.Clear();
+        else
+            dispatcher.BeginInvoke(() =>
+            {
+                lock (_gate) _entries.Clear();
+            });
     }
 }

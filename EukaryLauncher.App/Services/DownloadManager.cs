@@ -257,6 +257,16 @@ public sealed class DownloadManager
     }
 
     /// <summary>
+    /// 在后台线程（Runner）里创建进度回调时用它。
+    /// Progress&lt;T&gt; 在没有 SynchronizationContext 的线程上创建会同步回调，
+    /// 回调里改 UI 绑定的集合/属性就成了跨线程操作，必须显式切回 UI 线程。
+    /// </summary>
+    public static IProgress<T> UiProgress<T>(Action<T> handler)
+    {
+        return new Progress<T>(p => AppServices.Post(() => handler(p)));
+    }
+
+    /// <summary>
     /// 把 VersionInstaller 的阶段进度映射到卡片上的各个子步骤。
     /// 用户要看的是「每个资源分别到哪一步了」，所以按 stage 分片而不是只给一个总数。
     /// </summary>
@@ -264,7 +274,7 @@ public sealed class DownloadManager
     {
         var last = new double[8];
 
-        return new Progress<InstallProgress>(p =>
+        return UiProgress<InstallProgress>(p =>
         {
             var idx = (int)p.Stage;
             if (idx > (int)InstallStage.Logging) idx = (int)InstallStage.Logging;
@@ -297,7 +307,7 @@ public sealed class DownloadManager
     public static IProgress<InstallProgress> RouteToSingleStep(DownloadJob job, int index)
     {
         var last = 0d;
-        return new Progress<InstallProgress>(p =>
+        return UiProgress<InstallProgress>(p =>
         {
             var pct = p.TotalFiles > 0
                 ? p.CompletedFiles * 100.0 / p.TotalFiles

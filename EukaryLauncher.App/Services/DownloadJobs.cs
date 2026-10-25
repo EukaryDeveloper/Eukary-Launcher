@@ -113,7 +113,7 @@ public static class DownloadJobs
             Directory.CreateDirectory(dir);
             var dest = Path.Combine(dir, file.Filename);
 
-            var progress = new Progress<FileProgress>(p =>
+            var progress = DownloadManager.UiProgress<FileProgress>(p =>
             {
                 var pct = p.TotalBytes is > 0
                     ? Math.Clamp(p.ReceivedBytes * 100.0 / p.TotalBytes.Value, 0, 100)
