@@ -66,6 +66,14 @@ public sealed partial class VanillaTabViewModel : ViewModelBase
     [ObservableProperty] private string statusText = "";
     [ObservableProperty] private AvailableVersionRow? selectedRow;
 
+    /// <summary>已安装区默认收起，点标题展开。</summary>
+    [ObservableProperty] private bool isInstalledExpanded;
+
+    public string InstalledHeaderText => Installed.Count == 0 ? "已安装" : $"已安装（{Installed.Count}）";
+
+    [RelayCommand]
+    private void ToggleInstalled() => IsInstalledExpanded = !IsInstalledExpanded;
+
     partial void OnSearchTextChanged(string value) => ApplyFilter();
     partial void OnShowSnapshotsChanged(bool value) => ApplyFilter();
     partial void OnShowOldVersionsChanged(bool value) => ApplyFilter();
@@ -106,6 +114,8 @@ public sealed partial class VanillaTabViewModel : ViewModelBase
 
             _ = gameVersion;
         }
+
+        OnPropertyChanged(nameof(InstalledHeaderText));
     }
 
     public async Task LoadManifestAsync()

@@ -33,13 +33,45 @@
                     HorizontalAlignment="Right" Command="{Binding OpenGameFolderCommand}"/>
         </Grid>
 
-        <!-- 已安装 -->
-        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="16" Margin="0,0,0,16">
+        <!-- 已安装：默认收起，点标题展开 -->
+        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="16,12" Margin="0,0,0,16">
             <StackPanel>
-                <TextBlock Text="已安装" Style="{StaticResource TextMuted}" FontWeight="SemiBold"
-                           Margin="0,0,0,12"/>
+                <Button Style="{StaticResource GhostButton}" Padding="4,2" MinWidth="0" Height="Auto"
+                        HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch"
+                        Command="{Binding ToggleInstalledCommand}">
+                    <Grid>
+                        <TextBlock Text="{Binding InstalledHeaderText}" Style="{StaticResource TextMuted}"
+                                   FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource TextCaption}">
+                                    <Setter Property="Text" Value="展开"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsInstalledExpanded}" Value="True">
+                                            <Setter Property="Text" Value="收起"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Button>
 
-                <ItemsControl ItemsSource="{Binding Installed}">
+                <!-- 一个都没装时始终给提示；有安装时按展开状态显示 -->
+                <TextBlock Text="还没有安装任何版本，从下面的清单里挑一个下载吧。"
+                           Style="{StaticResource EmptyHintStyle}" Margin="4,8,0,0"/>
+
+                <ItemsControl ItemsSource="{Binding Installed}" Margin="0,10,0,0">
+                    <ItemsControl.Style>
+                        <Style TargetType="ItemsControl">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsInstalledExpanded}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ItemsControl.Style>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel/>
@@ -71,9 +103,6 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-
-                <TextBlock Text="还没有安装任何版本，从下面的清单里挑一个下载吧。"
-                           Style="{StaticResource EmptyHintStyle}" Margin="0,4,0,0"/>
             </StackPanel>
         </Border>
 

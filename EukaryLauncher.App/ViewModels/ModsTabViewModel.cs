@@ -70,7 +70,6 @@ public sealed partial class ModsTabViewModel : ViewModelBase
     public ObservableCollection<ModCard> Results { get; } = new();
 
     [ObservableProperty] private string searchText = "";
-    [ObservableProperty] private string? selectedGameVersion;
     [ObservableProperty] private string? selectedLoader;
     [ObservableProperty] private string selectedSource = "Modrinth";
     [ObservableProperty] private bool isLoading;
@@ -83,11 +82,37 @@ public sealed partial class ModsTabViewModel : ViewModelBase
     public IReadOnlyList<string> LoaderList { get; } = new[] { "全部", "Fabric", "Forge", "NeoForge", "Quilt" };
     public IReadOnlyList<string> Sources { get; } = new[] { "Modrinth" };
 
+    /// <summary>版本筛选：下拉可选、也可以直接手输版本号，「全部」或空 = 不过滤。</summary>
+    [ObservableProperty] private string versionFilter = "全部";
+
+    private CancellationTokenSource? _versionDebounceCts;
+
+    /// <summary>手输版本号时防抖 500ms，停顿了才重新搜索。</summary>
+    partial void OnVersionFilterChanged(string value)
+    {
+        if (!HasSearched) return;
+
+        _versionDebounceCts?.Cancel();
+        _versionDebounceCts = new CancellationTokenSource();
+        _ = DebouncedSearchAsync(_versionDebounceCts.Token);
+    }
+
+    private async Task DebouncedSearchAsync(CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(500, ct);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await DoSearchAsync(reset: true);
+    }
+
     [ObservableProperty] private int selectedLoaderIndex;
     partial void OnSelectedLoaderIndexChanged(int value) => _ = HasSearched ? DoSearchAsync(reset: true) : Task.CompletedTask;
-
-    [ObservableProperty] private int selectedGameVersionIndex;
-    partial void OnSelectedGameVersionIndexChanged(int value) => _ = HasSearched ? DoSearchAsync(reset: true) : Task.CompletedTask;
 
     [ObservableProperty]
     private ModDetailViewModel? detail;
@@ -102,14 +127,21 @@ public sealed partial class ModsTabViewModel : ViewModelBase
             ? LoaderOptions[SelectedLoaderIndex - 1]
             : "";
 
-    private string CurrentGameVersion =>
-        SelectedGameVersionIndex > 0 && SelectedGameVersionIndex < GameVersions.Count
-            ? GameVersions[SelectedGameVersionIndex]
-            : "";
+    private string CurrentGameVersion
+    {
+        get
+        {
+            var text = (VersionFilter ?? "").Trim();
+            return text.Length == 0 || string.Equals(text, "全部", StringComparison.Ordinal) ? "" : text;
+        }
+    }
 
     public override async Task OnNavigatedAsync()
     {
         if (GameVersions.Count <= 1) await LoadGameVersionsAsync();
+
+        // 启动后第一次打开模组页就先搜一轮，别让用户面对一块空白
+        if (!HasSearched) await DoSearchAsync(reset: true);
     }
 
     private async Task LoadGameVersionsAsync()
@@ -120,7 +152,7 @@ public sealed partial class ModsTabViewModel : ViewModelBase
             var releases = manifest.Versions
                 .Where(v => v.Type == "release")
                 .Select(v => v.Id)
-                .Take(24)
+                .Take(60)
                 .ToList();
 
             GameVersions = new[] { "全部" }.Concat(releases).ToList();

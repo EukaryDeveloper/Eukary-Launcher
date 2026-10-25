@@ -49,12 +49,13 @@
                         Command="{Binding OpenProjectPageCommand}"/>
             </Grid>
 
-            <!-- 游戏版本筛选条 -->
+            <!-- 游戏版本筛选条：横向禁用滚动，让 WrapPanel 正确折行 -->
             <ListBox ItemsSource="{Binding VersionChips}"
                      SelectedIndex="{Binding SelectedVersionIndex, Mode=TwoWay}"
                      ItemContainerStyle="{StaticResource ChipItem}"
                      Background="Transparent" BorderThickness="0" Margin="0,14,0,0"
-                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel/>
@@ -119,7 +120,7 @@
                                         <DataTemplate>
                                             <Button Style="{StaticResource GhostButton}" Padding="10,8" MinWidth="0"
                                                     Height="Auto" HorizontalContentAlignment="Stretch"
-                                                    Command="{Binding DataContext.InstallCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    Command="{Binding DataContext.InstallCommand, RelativeSource={RelativeSource AncestorType=UserControl}, PresentationTraceSources.TraceLevel=High}"
                                                     CommandParameter="{Binding}">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>

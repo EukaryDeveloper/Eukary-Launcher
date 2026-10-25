@@ -196,9 +196,10 @@
                                 Focusable="False"/>
             </Grid>
 
-            <!-- 通知浮层：不拦截鼠标事件，避免挡住下面的操作 -->
-            <ItemsControl Grid.Row="0" Grid.RowSpan="2"
-                          ItemsSource="{Binding Source={x:Static svc:AppServices.Toasts}}"
+            <!-- 通知浮层：不拦截鼠标事件，避免挡住下面的操作。
+                 注意 Source 是 ToastService，集合要再往下走一层 .Toasts -->
+            <ItemsControl x:Name="ToastHost" Grid.Row="0" Grid.RowSpan="2"
+                          ItemsSource="{Binding Toasts, Source={x:Static svc:AppServices.Toasts}}"
                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
                           Margin="0,0,20,20" IsHitTestVisible="False"
                           Focusable="False"/>

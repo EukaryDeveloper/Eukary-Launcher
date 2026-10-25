@@ -19,7 +19,8 @@
                 CornerRadius="{StaticResource RadiusControl}"
                 SnapsToDevicePixels="True">
             <Border.Effect>
-                <DropShadowEffect Color="{Binding Background.Color, RelativeSource={RelativeSource TemplatedParent}}"
+                <!-- DropShadowEffect 不是 FrameworkElement，绑定取不到 TemplatedParent，固定用黑色 -->
+                <DropShadowEffect Color="#000000"
                                   BlurRadius="14" ShadowDepth="0" Direction="270" Opacity="0"/>
             </Border.Effect>
             <Border.RenderTransform>
@@ -286,14 +287,35 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{StaticResource RadiusControl}" SnapsToDevicePixels="True">
                             <Grid>
-                                <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter x:Name="SelectedItemPresenter"
+                                                  Grid.Column="0"
+                                                  Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
                                                   Content="{TemplateBinding SelectionBoxItem}"
                                                   ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                                   ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                                                   IsHitTestVisible="False"
                                                   TextBlock.Foreground="{TemplateBinding Foreground}"/>
-                                <ToggleButton Style="{StaticResource ComboBoxToggle}"
+                                <!-- 可编辑模式：PART_EditableTextBox 是 WPF 的模板契约名 -->
+                                <TextBox x:Name="PART_EditableTextBox"
+                                         Grid.Column="0"
+                                         Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
+                                         BorderThickness="0" Background="Transparent"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         CaretBrush="{StaticResource Text1Brush}"
+                                         Visibility="Collapsed" Focusable="True"/>
+                                <!-- 非编辑模式：整块可点开下拉 -->
+                                <ToggleButton x:Name="ToggleBody" Grid.ColumnSpan="2"
+                                              Style="{StaticResource ComboBoxToggle}"
                                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                                <!-- 编辑模式：只留箭头开下拉，左边给输入 -->
+                                <ToggleButton x:Name="ToggleArrow" Grid.Column="1" Width="24"
+                                              Style="{StaticResource ComboBoxToggle}"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Visibility="Collapsed"/>
                             </Grid>
                         </Border>
                         <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True"
@@ -315,6 +337,12 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter TargetName="SelectedItemPresenter" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="ToggleBody" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="ToggleArrow" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
@@ -530,8 +558,11 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ProgressBar">
                     <Border Background="{TemplateBinding Background}" CornerRadius="999" SnapsToDevicePixels="True">
-                        <Border x:Name="PART_Track" HorizontalAlignment="Left" CornerRadius="999"
-                                Background="{TemplateBinding Foreground}" Width="0"/>
+                        <!-- WPF ProgressBar 模板契约：PART_Track 是轨道，PART_Indicator 由控件按百分比撑宽度 -->
+                        <Grid x:Name="PART_Track">
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="999"
+                                    Background="{TemplateBinding Foreground}"/>
+                        </Grid>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -699,19 +730,19 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Style.Triggers>
-            <!-- 选中态由 VM 的 IsSelected 驱动 -->
-            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                <Setter Property="Background" Value="{StaticResource AccentTintBrush}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-            </DataTrigger>
-        </Style.Triggers>
     </Style>
 
     <!-- 加载器选择行：整行可点，右侧显示状态（获取中 / 可以添加 / 无 / 已安装） -->
     <Style x:Key="LoaderRowButton" TargetType="Button" BasedOn="{StaticResource CardButton}">
         <Setter Property="Padding" Value="16,14"/>
         <Setter Property="Foreground" Value="{StaticResource Text1Brush}"/>
+        <Style.Triggers>
+            <!-- 选中态由 VM 的 IsSelected 驱动（只有加载器行有这个属性） -->
+            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentTintBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <!-- 筛选胶囊：模组页的版本 / 加载器筛选条 -->

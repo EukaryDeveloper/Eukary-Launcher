@@ -125,7 +125,7 @@ public sealed partial class ModDetailViewModel : ViewModelBase
                 .SelectMany(v => v.GameVersions)
                 .Distinct()
                 .OrderByDescending(v => v, new GameVersionComparer())
-                .Take(14)
+                .Take(60)
                 .ToList();
 
             VersionChips = new[] { "全部" }.Concat(gameVersions).ToList();

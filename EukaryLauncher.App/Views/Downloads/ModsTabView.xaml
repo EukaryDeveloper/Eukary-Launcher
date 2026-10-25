@@ -13,7 +13,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 筛选：两行。第一行 名称 + 搜索按钮，第二行 版本 / 加载器 / 来源 -->
+        <!-- 筛选：两行。第一行 名称 + 搜索按钮 + 版本（可输入可下拉），第二行 加载器 / 来源 -->
         <Border Grid.Row="0" Style="{StaticResource Panel}" Padding="16,12" Margin="0,0,0,16">
             <Grid>
                 <Grid.RowDefinitions>
@@ -22,43 +22,44 @@
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="0,0,0,12">
-                    <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0"
+                             Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="按名称或关键词搜索" Height="{StaticResource ControlHeightMd}"
-                             VerticalContentAlignment="Center">
+                             VerticalContentAlignment="Center" Margin="0,0,10,0">
                         <TextBox.InputBindings>
                             <KeyBinding Key="Enter" Command="{Binding SearchCommand}"/>
                         </TextBox.InputBindings>
                     </TextBox>
-                    <Button Content="搜索" Style="{StaticResource PrimaryButton}"
+
+                    <Button Grid.Column="1" Content="搜索" Style="{StaticResource PrimaryButton}"
                             Height="34" Padding="20,0" FontSize="{StaticResource FontSizeSm}"
-                            HorizontalAlignment="Right" MinWidth="84"
+                            MinWidth="84" Margin="0,0,16,0"
                             Command="{Binding SearchCommand}"/>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="版本" Style="{StaticResource TextCaption}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox IsEditable="True" Width="150"
+                                  ToolTip="可以直接输入版本号，也可以下拉选择"
+                                  ItemsSource="{Binding GameVersions}"
+                                  Text="{Binding VersionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
                 </Grid>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="版本" Style="{StaticResource TextCaption}"
-                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <ListBox ItemsSource="{Binding GameVersions}"
-                                 SelectedIndex="{Binding SelectedGameVersionIndex, Mode=TwoWay}"
-                                 ItemContainerStyle="{StaticResource ChipItem}"
-                                 Background="Transparent" BorderThickness="0" MaxWidth="330"
-                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                        </ListBox>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                         <TextBlock Text="加载器" Style="{StaticResource TextCaption}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <ListBox ItemsSource="{Binding LoaderList}"
                                  SelectedIndex="{Binding SelectedLoaderIndex, Mode=TwoWay}"
                                  ItemContainerStyle="{StaticResource ChipItem}"
-                                 Background="Transparent" BorderThickness="0" MaxWidth="360"
+                                 Background="Transparent" BorderThickness="0"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>

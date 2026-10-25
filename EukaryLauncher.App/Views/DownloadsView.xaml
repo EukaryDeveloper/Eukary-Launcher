@@ -38,7 +38,7 @@
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="{Binding Text}" Style="{StaticResource TextMuted}"
                            HorizontalAlignment="Center" Margin="0,8,0,0"
-                           MaxWidth="380" TextWrapping="Wrap" TextAlignment="Center"/>
+                           TextTrimming="CharacterEllipsis"/>
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
