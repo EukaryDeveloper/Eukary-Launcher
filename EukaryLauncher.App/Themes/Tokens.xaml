@@ -60,6 +60,10 @@
     <CornerRadius x:Key="RadiusSm">6</CornerRadius>
     <CornerRadius x:Key="RadiusMd">10</CornerRadius>
     <CornerRadius x:Key="RadiusLg">14</CornerRadius>
+    <!-- RadiusLg 容器的内层圆角：外层圆角 - 1px 边框 -->
+    <CornerRadius x:Key="RadiusLgInner">13</CornerRadius>
+    <CornerRadius x:Key="RadiusLgTopInner">13,13,0,0</CornerRadius>
+    <CornerRadius x:Key="RadiusLgBottomInner">0,0,13,13</CornerRadius>
     <CornerRadius x:Key="RadiusPill">999</CornerRadius>
     <sys:Double x:Key="RadiusControlValue">8</sys:Double>
     <sys:Double x:Key="RadiusSmValue">6</sys:Double>

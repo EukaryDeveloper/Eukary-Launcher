@@ -20,7 +20,7 @@
                 <TextBlock Text="游戏文件" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <ContentControl Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRowFirst}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -63,7 +63,7 @@
                 <TextBlock Text="下载" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <ContentControl Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRowFirst}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -102,7 +102,7 @@
                 <TextBlock Text="Java 运行时" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
                     <StackPanel>
-                        <ContentControl Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRowFirst}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -183,7 +183,7 @@
                 <TextBlock Text="启动" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}">
                     <StackPanel>
-                        <ContentControl Style="{StaticResource SettingsRow}">
+                        <ContentControl Style="{StaticResource SettingsRowFirst}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
