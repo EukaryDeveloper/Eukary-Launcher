@@ -37,6 +37,10 @@ public sealed class ModIndexService
     public IReadOnlyDictionary<string, ModIndexEntry> ForGameVersion(string gameVersion) =>
         _data.TryGetValue(gameVersion, out var map) ? map : new Dictionary<string, ModIndexEntry>();
 
+    /// <summary>全部记录：游戏版本 → 该版本装了哪些模组。启动前同步用。</summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, ModIndexEntry>> All() =>
+        _data.ToDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<string, ModIndexEntry>)kv.Value, StringComparer.Ordinal);
+
     public bool IsInstalled(string gameVersion, string projectId) =>
         _data.TryGetValue(gameVersion, out var map) && map.ContainsKey(projectId);
 

@@ -209,7 +209,7 @@ public sealed partial class ModDetailViewModel : ViewModelBase
         var gameVersion = row.GameVersion;
         var loader = row.Loader;
 
-        if (!_context.IsInstalled(gameVersion))
+        if (!_context.IsMcVersionInstalled(gameVersion))
         {
             _toast.Warning($"尚未安装 Minecraft {gameVersion}，请先在「原版游戏」里安装它");
             return;

@@ -30,25 +30,38 @@
         <!-- 加载器列表 -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <TextBlock Text="选择模组加载器" Style="{StaticResource TextMuted}"
-                           FontWeight="SemiBold" Margin="0,0,0,12"/>
+                <TextBlock Text="选择模组加载器（可多选）" Style="{StaticResource TextMuted}"
+                           FontWeight="SemiBold" Margin="0,0,0,4"/>
+                <TextBlock Text="能共存的会自动放开，比如 Forge + OptiFine；互斥的会置灰并说明原因。"
+                           Style="{StaticResource TextCaption}" Margin="0,0,0,12"/>
 
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Button Style="{StaticResource LoaderRowButton}" Margin="0,0,0,10"
-                                    IsEnabled="{Binding Selectable}"
-                                    Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    IsEnabled="{Binding CanToggle}"
+                                    Command="{Binding DataContext.ToggleCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     CommandParameter="{Binding}">
                                 <Grid>
-                                    <StackPanel VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <CheckBox Grid.Column="0" VerticalAlignment="Center" Margin="0,0,14,0"
+                                              IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                              IsHitTestVisible="False" Focusable="False"/>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontSize="{StaticResource FontSizeBase}"
                                                    FontWeight="SemiBold" Foreground="{DynamicResource Text1Brush}"/>
                                         <TextBlock Text="{Binding Hint}" Style="{StaticResource TextCaption}"
                                                    Margin="0,3,0,0"/>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
-                                                VerticalAlignment="Center">
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                                VerticalAlignment="Center" Margin="20,0,0,0">
                                         <TextBlock Text="{Binding Version}" Style="{StaticResource TextMuted}"
                                                    VerticalAlignment="Center" Margin="0,0,16,0"/>
                                         <TextBlock Text="{Binding StateText}" VerticalAlignment="Center"
@@ -62,7 +75,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <TextBlock Text="也可以不选加载器，直接安装原版。"
+                <TextBlock Text="也可以一个都不选，直接安装原版。"
                            Style="{StaticResource TextCaption}" Margin="0,6,0,0"/>
             </StackPanel>
         </ScrollViewer>
@@ -71,8 +84,8 @@
         <Border Grid.Row="2" Margin="0,18,0,0" Padding="0,16,0,0"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
             <StackPanel>
-                <TextBlock Text="{Binding StatusText}" Style="{StaticResource TextCaption}"
-                           Visibility="Collapsed"/>
+                <TextBlock Text="{Binding SummaryText}" Style="{StaticResource TextCaption}"
+                           Margin="0,0,0,10"/>
                 <Button Content="开始下载" Style="{StaticResource PrimaryButton}"
                         Height="{StaticResource ControlHeightLg}" FontSize="{StaticResource FontSizeBase}"
                         HorizontalAlignment="Right" MinWidth="140"

@@ -35,26 +35,29 @@ public sealed partial class LoaderRow : ObservableObject
     public string StateText => State switch
     {
         LoaderState.Checking => "获取中",
-        LoaderState.Available => "可以添加",
-        LoaderState.Incompatible => "无",
+        LoaderState.Available => "可添加",
+        LoaderState.Incompatible => "不可用",
         LoaderState.Installed => "已安装",
         _ => "",
     };
 
-    public bool Selectable => State is LoaderState.Available;
+    /// <summary>能点 = 现在可以勾上，或者已经勾上（再点一下取消）。</summary>
+    public bool CanToggle => State == LoaderState.Available || IsSelected;
 
     partial void OnStateChanged(LoaderState value)
     {
         OnPropertyChanged(nameof(StateText));
-        OnPropertyChanged(nameof(Selectable));
+        OnPropertyChanged(nameof(CanToggle));
     }
 
     partial void OnVersionChanged(string value) => OnPropertyChanged(nameof(Hint));
-    partial void OnIsSelectedChanged(bool value) => OnPropertyChanged(nameof(Selectable));
+
+    partial void OnIsSelectedChanged(bool value) => OnPropertyChanged(nameof(CanToggle));
 }
 
 /// <summary>
-/// 原版游戏点「继续」之后的选择页：挑一个模组加载器，选中的加载器会反过来影响其它加载器能否添加。
+/// 原版游戏点「继续」之后的选择页：挑要装哪些模组加载器。
+/// 能共存的可以多选（Forge + OptiFine 就是最典型的组合），不能共存的会直接置灰并说明原因。
 /// 真正开始下载要等点「开始下载」——这也是整个下载页「所有下载都排队」的统一入口。
 /// </summary>
 public sealed partial class LoaderSelectViewModel : ViewModelBase
@@ -65,10 +68,13 @@ public sealed partial class LoaderSelectViewModel : ViewModelBase
     private readonly LogService _log = LogService.Instance;
     private readonly FabricMetaService _fabric;
 
-    private string? _fabricLoaderVersion;
+    /// <summary>各加载器自身（不考虑互斥）能不能装，互斥计算时以它为基准。</summary>
+    private readonly Dictionary<string, bool> _usable = new();
 
-    /// <summary>各加载器自身（不考虑互斥）的可用性，互斥计算时以它为基准。</summary>
-    private readonly Dictionary<string, LoaderState> _baseStates = new();
+    private ForgeBuild? _forge;
+    private NeoForgeBuild? _neoForge;
+    private OptiFineBuild? _optiFine;
+    private string? _fabricLoaderVersion;
 
     public event Action? BackRequested;
 
@@ -85,10 +91,10 @@ public sealed partial class LoaderSelectViewModel : ViewModelBase
     [ObservableProperty] private string statusText = "";
     [ObservableProperty] private bool isChecking = true;
 
-    [ObservableProperty] private LoaderRow? selectedLoader;
-    partial void OnSelectedLoaderChanged(LoaderRow? value) => ApplyCompatibility();
+    public IReadOnlyList<string> SelectedIds =>
+        Rows.Where(r => r.IsSelected).Select(r => r.Id).ToList();
 
-    public bool HasSelection => SelectedLoader is not null;
+    public bool HasSelection => Rows.Any(r => r.IsSelected);
 
     /// <summary>进入页面时调用：拿版本信息并跑一遍可用性检查。</summary>
     public async Task InitializeAsync(string gameVersion)
@@ -98,14 +104,18 @@ public sealed partial class LoaderSelectViewModel : ViewModelBase
         IsChecking = true;
 
         var installed = _context.InstalledLoaders(gameVersion);
+
         var tasks = Rows.Select(row => CheckAsync(row, gameVersion, installed));
         await Task.WhenAll(tasks);
 
-        foreach (var row in Rows) _baseStates[row.Id] = row.State;
-        ApplyCompatibility();
+        foreach (var row in Rows)
+            _usable[row.Id] = row.State == LoaderState.Available;
+
+        RefreshCompatibility();
         IsChecking = false;
+
         StatusText = installed.Count == 0
-            ? $"Minecraft {gameVersion} · 选择一个模组加载器，也可以不选直接安装原版"
+            ? $"Minecraft {gameVersion} · 勾选要一起装的加载器，也可以一个都不选"
             : $"Minecraft {gameVersion} · 已装 {string.Join(" / ", installed.Select(LoaderIds.DisplayName))}";
     }
 
@@ -126,7 +136,6 @@ public sealed partial class LoaderSelectViewModel : ViewModelBase
                 var latest = versions.FirstOrDefault(v => v.Stable) ?? versions.FirstOrDefault();
                 if (latest is null)
                 {
-                    row.State = LoaderState.Incompatible;
                     row.Hint = "该游戏版本暂无可用加载器";
                 }
                 else
@@ -139,95 +148,166 @@ public sealed partial class LoaderSelectViewModel : ViewModelBase
                 break;
             }
 
-            case LoaderIds.NeoForge:
+            case LoaderIds.Forge:
             {
-                // NeoForge 只覆盖 1.20.1 及之后的版本
-                if (IsAtLeast(gameVersion, "1.20.1"))
+                var builds = await LoaderMeta.GetForgeBuildsAsync(gameVersion);
+                var latest = LoaderMeta.LatestForge(builds);
+                if (latest is null)
                 {
-                    row.State = LoaderState.Available;
-                    row.Hint = "自动安装将在 M5 支持";
+                    row.Hint = "该游戏版本没有可用的 Forge";
                 }
                 else
                 {
-                    row.State = LoaderState.Incompatible;
-                    row.Hint = "该游戏版本不支持";
+                    _forge = latest;
+                    row.State = LoaderState.Available;
+                    row.Version = latest.Version;
+                    row.Hint = "可自动安装";
                 }
                 break;
             }
 
-            case LoaderIds.Forge:
+            case LoaderIds.NeoForge:
             {
-                row.State = LoaderState.Available;
-                row.Hint = "自动安装将在 M5 支持";
+                var builds = await LoaderMeta.GetNeoForgeBuildsAsync(gameVersion);
+                var latest = LoaderMeta.LatestNeoForge(builds);
+                if (latest is null)
+                {
+                    row.Hint = "该游戏版本没有可用的 NeoForge";
+                }
+                else
+                {
+                    _neoForge = latest;
+                    row.State = LoaderState.Available;
+                    row.Version = latest.Version;
+                    row.Hint = "可自动安装";
+                }
                 break;
             }
 
             case LoaderIds.OptiFine:
             {
-                var isSnapshot = gameVersion.Contains('w', StringComparison.OrdinalIgnoreCase)
-                                 || (!gameVersion.Contains('.') && gameVersion.Length > 6);
-                if (isSnapshot)
+                var builds = await LoaderMeta.GetOptiFineBuildsAsync(gameVersion);
+                var latest = LoaderMeta.LatestOptiFine(builds);
+                if (latest is null)
                 {
-                    row.State = LoaderState.Incompatible;
-                    row.Hint = "快照版本不支持";
+                    row.Hint = "该游戏版本没有可用的 OptiFine";
                 }
                 else
                 {
+                    _optiFine = latest;
                     row.State = LoaderState.Available;
-                    row.Hint = "自动安装将在 M5 支持";
+                    row.Version = latest.SelfVersion;
+                    row.Hint = latest.IsPreview
+                        ? "预览版 · 与 Forge 一起装时作为模组装入"
+                        : "与 Forge 一起装时作为模组装入";
                 }
                 break;
             }
         }
     }
 
-    /// <summary>选中一个加载器后，其它加载器是否还能加。</summary>
-    private void ApplyCompatibility()
+    /// <summary>勾选项变化后重算每一行的可用性（互斥是双向的）。</summary>
+    private void RefreshCompatibility()
     {
-        var selected = SelectedLoader?.Id;
+        var selected = SelectedIds;
 
         foreach (var row in Rows)
         {
-            if (!_baseStates.TryGetValue(row.Id, out var baseState)) continue;
+            if (row.State == LoaderState.Installed) continue;
 
-            row.State = IsCompatible(row.Id, selected) ? baseState : LoaderState.Incompatible;
-            if (row.State == LoaderState.Incompatible && row.IsSelected) row.IsSelected = false;
+            // 已经选上的永远可以取消
+            if (row.IsSelected)
+            {
+                row.State = LoaderState.Available;
+                continue;
+            }
+
+            if (_usable.TryGetValue(row.Id, out var usable) && usable
+                && CanCoexist(selected.Append(row.Id)))
+            {
+                row.State = LoaderState.Available;
+                continue;
+            }
+
+            row.State = LoaderState.Incompatible;
+            row.Hint = RejectReason(row.Id, selected);
         }
 
         OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedIds));
+        OnPropertyChanged(nameof(SummaryText));
     }
 
-    private static bool IsCompatible(string candidate, string? selected) => (candidate, selected) switch
+    /// <summary>这一组加载器能不能同时装在一个版本上。</summary>
+    private static bool CanCoexist(IEnumerable<string> ids)
     {
-        (_, null) => true,
-        // Fabric 与 OptiFine 不能共存（Fabric 生态用 Iris 代替）
-        (LoaderIds.OptiFine, LoaderIds.Fabric) => false,
-        (LoaderIds.Fabric, LoaderIds.OptiFine) => false,
-        // Forge 与 NeoForge 同源分家，不能共存
-        (LoaderIds.Forge, LoaderIds.NeoForge) => false,
-        (LoaderIds.NeoForge, LoaderIds.Forge) => false,
-        // Fabric 与 Forge 系也不能共存
-        (LoaderIds.Fabric, LoaderIds.Forge or LoaderIds.NeoForge) => false,
-        (LoaderIds.Forge or LoaderIds.NeoForge, LoaderIds.Fabric) => false,
-        _ => true,
-    };
+        var set = ids.ToList();
+        bool Has(string id) => set.Contains(id);
 
-    [RelayCommand]
-    private void Select(LoaderRow? row)
+        // Forge / NeoForge / Fabric 是三套互斥的加载体系，只能选一个
+        if (set.Count(id => id is LoaderIds.Forge or LoaderIds.NeoForge or LoaderIds.Fabric) > 1)
+            return false;
+
+        // Fabric 生态用 Iris 代替 OptiFine，两者不能共存
+        if (Has(LoaderIds.Fabric) && Has(LoaderIds.OptiFine)) return false;
+
+        // OptiFine 官方只标了 Forge 的兼容版本，NeoForge 上不保证能跑
+        if (Has(LoaderIds.NeoForge) && Has(LoaderIds.OptiFine)) return false;
+
+        return true;
+    }
+
+    /// <summary>为什么这一行现在不能勾。</summary>
+    private string RejectReason(string candidate, IReadOnlyList<string> selected)
     {
-        if (row is null || !row.Selectable) return;
+        if (selected.Count == 0) return "该游戏版本暂不可用";
 
-        // 再点一次取消选择
-        if (SelectedLoader == row)
+        if (candidate is LoaderIds.Forge or LoaderIds.NeoForge or LoaderIds.Fabric
+            && selected.Any(s => s is LoaderIds.Forge or LoaderIds.NeoForge or LoaderIds.Fabric))
+            return "与已选的加载器不能共存";
+
+        if (candidate == LoaderIds.OptiFine)
         {
-            row.IsSelected = false;
-            SelectedLoader = null;
-            return;
+            if (selected.Contains(LoaderIds.Fabric)) return "Fabric 上请用 Iris 代替";
+            if (selected.Contains(LoaderIds.NeoForge)) return "OptiFine 不支持 NeoForge";
         }
 
-        foreach (var r in Rows) r.IsSelected = false;
-        row.IsSelected = true;
-        SelectedLoader = row;
+        if (candidate == LoaderIds.Fabric && selected.Contains(LoaderIds.OptiFine))
+            return "与 OptiFine 不能共存（请用 Iris）";
+
+        if (candidate == LoaderIds.NeoForge && selected.Contains(LoaderIds.OptiFine))
+            return "与 OptiFine 不能共存";
+
+        return "暂不可用";
+    }
+
+    [RelayCommand]
+    private void Toggle(LoaderRow? row)
+    {
+        if (row is null) return;
+
+        if (row.IsSelected)
+        {
+            row.IsSelected = false;
+        }
+        else
+        {
+            if (!_usable.TryGetValue(row.Id, out var usable) || !usable) return;
+            if (!CanCoexist(SelectedIds.Append(row.Id))) return;
+            row.IsSelected = true;
+        }
+
+        RefreshCompatibility();
+    }
+
+    public string SummaryText
+    {
+        get
+        {
+            var selected = SelectedIds;
+            if (selected.Count == 0) return "不会安装任何加载器，只装原版";
+            return string.Join(" + ", selected.Select(LoaderIds.DisplayName)) + " 将一起安装";
+        }
     }
 
     [RelayCommand]
@@ -255,52 +335,57 @@ public sealed partial class LoaderSelectViewModel : ViewModelBase
             _toast.Info($"Minecraft {GameVersion} 已加入下载队列");
         }
 
-        if (SelectedLoader is { } loader)
+        var selected = SelectedIds;
+        var withForge = selected.Contains(LoaderIds.Forge);
+
+        // 加载器先装，OptiFine 放最后——它要在加载器就位之后才决定以什么形态落地
+        foreach (var id in selected)
         {
-            if (loader.Id == LoaderIds.Fabric)
+            switch (id)
             {
-                if (_fabricLoaderVersion is { Length: > 0 })
-                {
-                    _queue.Enqueue(DownloadJobs.FabricLoader(GameVersion, _fabricLoaderVersion));
-                    _toast.Info($"Fabric Loader {_fabricLoaderVersion} 已加入下载队列");
-                }
-                else
-                {
-                    _toast.Warning("Fabric 加载器版本获取失败，请返回重试");
-                }
-            }
-            else
-            {
-                _toast.Warning($"{loader.Name} 的自动安装将在 M5 支持，当前版本仅支持 Fabric");
-                _log.Info($"用户选择了尚未支持的加载器：{loader.Name} / {GameVersion}");
+                case LoaderIds.Fabric:
+                    if (_fabricLoaderVersion is { Length: > 0 })
+                    {
+                        _queue.Enqueue(DownloadJobs.FabricLoader(GameVersion, _fabricLoaderVersion));
+                        _toast.Info($"Fabric Loader {_fabricLoaderVersion} 已加入下载队列");
+                    }
+                    else
+                    {
+                        _toast.Warning("Fabric 加载器版本获取失败，请返回重试");
+                    }
+                    break;
+
+                case LoaderIds.Forge:
+                    if (_forge is { } forge)
+                    {
+                        _queue.Enqueue(DownloadJobs.Forge(GameVersion, forge.Version));
+                        _toast.Info($"Forge {forge.Version} 已加入下载队列");
+                    }
+                    break;
+
+                case LoaderIds.NeoForge:
+                    if (_neoForge is { } neo)
+                    {
+                        _queue.Enqueue(DownloadJobs.NeoForge(GameVersion, neo.Version));
+                        _toast.Info($"NeoForge {neo.Version} 已加入下载队列");
+                    }
+                    break;
             }
         }
+
+        if (selected.Contains(LoaderIds.OptiFine) && _optiFine is { } of)
+        {
+            _queue.Enqueue(DownloadJobs.OptiFine(of, withForge));
+            _toast.Info($"OptiFine {of.SelfVersion} 已加入下载队列");
+        }
+
+        _log.Info($"准备安装 {GameVersion}" + (selected.Count == 0
+            ? "（仅原版）"
+            : $"（{string.Join(" + ", selected.Select(LoaderIds.DisplayName))}）"));
 
         BackRequested?.Invoke();
     }
 
     [RelayCommand]
     private void Back() => BackRequested?.Invoke();
-
-    private static bool IsAtLeast(string version, string baseline)
-    {
-        // 只比较 x.y.z 的前三段，快照（26.1-snapshot-4 这种）按前缀处理
-        static int[] Parse(string v)
-        {
-            var core = v.Split('-')[0];
-            var parts = core.Split('.');
-            var nums = new int[3];
-            for (var i = 0; i < Math.Min(parts.Length, 3); i++)
-                int.TryParse(parts[i], out nums[i]);
-            return nums;
-        }
-
-        var a = Parse(version);
-        var b = Parse(baseline);
-        for (var i = 0; i < 3; i++)
-        {
-            if (a[i] != b[i]) return a[i] > b[i];
-        }
-        return true;
-    }
 }

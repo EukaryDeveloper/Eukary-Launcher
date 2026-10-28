@@ -37,10 +37,25 @@ public sealed partial class ModCard : ObservableObject
     [ObservableProperty] private bool isInstalled;
     [ObservableProperty] private string installedText = "";
 
-    public void MarkInstalled(string versionNumber)
+    /// <summary>
+    /// 标记已安装。一个模组可能装在好几个游戏版本上，
+    /// 所以是累加而不是覆盖——列表页能直接看出它都装在哪几个版本里。
+    /// </summary>
+    public void MarkInstalled(string? gameVersion, string versionNumber)
     {
         IsInstalled = true;
-        InstalledText = $"已安装 {versionNumber}";
+        var label = string.IsNullOrEmpty(gameVersion) ? versionNumber : $"{gameVersion} · {versionNumber}";
+        if (InstalledText.Contains(label, StringComparison.Ordinal)) return;
+
+        InstalledText = InstalledText.Length == 0
+            ? $"已安装 {label}"
+            : $"{InstalledText}、{label}";
+    }
+
+    public void ClearInstalled()
+    {
+        IsInstalled = false;
+        InstalledText = "";
     }
 }
 
@@ -170,6 +185,9 @@ public sealed partial class ModsTabViewModel : ViewModelBase
     [RelayCommand]
     private Task LoadMoreAsync() => DoSearchAsync(reset: false);
 
+    /// <summary>自动化测试直接改属性不会触发防抖，用它踢一脚立刻重搜。</summary>
+    public void KickSearch() => _ = DebouncedSearchAsync(CancellationToken.None);
+
     private async Task DoSearchAsync(bool reset)
     {
         _cts?.Cancel();
@@ -237,16 +255,26 @@ public sealed partial class ModsTabViewModel : ViewModelBase
         _ = detail.InitializeAsync();
     }
 
+    /// <summary>
+    /// 刷新列表里的「已安装」标记。
+    /// 筛了某个游戏版本就只认它；没筛就把所有游戏版本上的记录都列出来。
+    /// </summary>
     public void SyncInstalledMarks()
     {
-        var gameVersion = CurrentGameVersion;
-        if (string.IsNullOrEmpty(gameVersion)) return;
+        var filter = CurrentGameVersion;
 
-        var installed = AppServices.ModIndex.ForGameVersion(gameVersion);
         foreach (var card in Results)
         {
-            if (installed.TryGetValue(card.ProjectId, out var entry))
-                card.MarkInstalled(entry.VersionNumber);
+            card.ClearInstalled();
+
+            foreach (var (gameVersion, entries) in AppServices.ModIndex.All())
+            {
+                if (filter.Length > 0 && !string.Equals(gameVersion, filter, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (entries.TryGetValue(card.ProjectId, out var entry))
+                    card.MarkInstalled(filter.Length > 0 ? null : gameVersion, entry.VersionNumber);
+            }
         }
     }
 

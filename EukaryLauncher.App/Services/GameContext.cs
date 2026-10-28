@@ -110,6 +110,24 @@ public sealed class GameContext
         return false;
     }
 
+    /// <summary>
+    /// 这个 MC 版本是否装好了（本体即可，不管装没装加载器）。
+    /// 装了 Fabric / Forge 之后，本地存在的是 fabric-loader-…-1.20.4 这样的版本 id，
+    /// 单独的 "1.20.4" 反而不存在，所以只能遍历反推。
+    /// </summary>
+    public bool IsMcVersionInstalled(string gameVersion)
+    {
+        foreach (var id in _installed)
+        {
+            var json = LoadInstalledVersion(id);
+            if (json is null) continue;
+
+            var mc = LoaderDetector.DetectGameVersion(id, json);
+            if (string.Equals(mc, gameVersion, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
+
     /// <summary>列出某个 MC 版本上已安装的全部加载器。</summary>
     public IReadOnlyList<string> InstalledLoaders(string gameVersion)
     {

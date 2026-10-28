@@ -161,7 +161,13 @@ public sealed partial class HomeViewModel : ViewModelBase
                 return;
             }
 
-            // 2. 确保有 Java
+            // 2. 把该游戏版本的模组搬到游戏真正会读的 mods 目录
+            var gameVersion = LoaderDetector.DetectGameVersion(version.Id, version) ?? version.Id;
+            var deployed = ModDeployer.Deploy(_context.Paths, gameVersion, AppServices.ModIndex);
+            if (deployed > 0)
+                _log.Info($"已把 {gameVersion} 的 {deployed} 个模组同步到 {_context.Paths.Root}\\mods");
+
+            // 3. 确保有 Java
             var java = await EnsureJavaAsync(version, _cts.Token);
             if (java is null)
             {
@@ -169,7 +175,7 @@ public sealed partial class HomeViewModel : ViewModelBase
                 return;
             }
 
-            // 3. 拼参数并启动
+            // 4. 拼参数并启动
             var options = OfflineAccount.CreateLaunchOptions(
                 _context.Paths.Root,
                 version.Id,
