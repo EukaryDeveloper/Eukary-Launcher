@@ -215,7 +215,9 @@
                                               IsChecked="{Binding UseCustomResolution, Mode=TwoWay}"/>
                             </Grid>
                         </ContentControl>
-                        <ContentControl Style="{StaticResource SettingsRow}">
+                        <!-- 只有开了「自定义游戏窗口尺寸」这一行才有意义，关着时不占位 -->
+                        <ContentControl Style="{StaticResource SettingsRow}"
+                                        Visibility="{Binding UseCustomResolution, Converter={StaticResource BoolToVisibility}}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*"/>
@@ -228,12 +230,10 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"
                                             VerticalAlignment="Center">
-                                    <TextBox Text="{Binding WindowWidth, Mode=TwoWay}" Width="100"
-                                             IsEnabled="{Binding UseCustomResolution}"/>
+                                    <TextBox Text="{Binding WindowWidth, Mode=TwoWay}" Width="100"/>
                                     <TextBlock Text="×" Style="{StaticResource TextMuted}" Margin="10,0"
                                                VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding WindowHeight, Mode=TwoWay}" Width="100"
-                                             IsEnabled="{Binding UseCustomResolution}"/>
+                                    <TextBox Text="{Binding WindowHeight, Mode=TwoWay}" Width="100"/>
                                 </StackPanel>
                             </Grid>
                         </ContentControl>
