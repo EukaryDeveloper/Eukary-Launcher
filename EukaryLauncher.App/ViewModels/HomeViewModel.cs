@@ -188,12 +188,13 @@ public sealed partial class HomeViewModel : ViewModelBase
                     WindowHeight = _settings.Current.WindowHeight,
                     UseCustomResolution = _settings.Current.UseCustomResolution,
                     ExtraJvmArgs = _settings.Current.ExtraJvmArgs,
-                    KeepLauncherOpen = _settings.Current.KeepLauncherOpen,
+                    Visibility = _settings.Current.LauncherVisibility,
                 };
 
             Directory.CreateDirectory(_context.Paths.Root);
 
             var launcher = new GameLauncher();
+            var visibility = LauncherVisibility.Unchanged; // 在 options 拼好后赋值，退出回调按本次启动的设置收尾
             launcher.OutputReceived += line => AppServices.Post(() => _log.GameOutput(line));
             launcher.Exited += code =>
             {
@@ -205,11 +206,20 @@ public sealed partial class HomeViewModel : ViewModelBase
                     ProgressValue = 0;
                     ProgressText = "";
                     _log.Info($"游戏进程结束，退出码 {code}");
+
+                    // 游戏运行期间启动器被隐藏的话，按设置恢复显示或退出
+                    if (visibility == LauncherVisibility.HideAndCloseOnExit)
+                        AppServices.OnGameExited?.Invoke(true);
+                    else if (visibility == LauncherVisibility.HideAndRestoreOnExit)
+                        AppServices.OnGameExited?.Invoke(false);
                 });
             };
 
             var process = launcher.Start(version, _context.Paths, options);
             _gameProcess = process;
+
+            // 启动动作与退出收尾都以本次启动时捕获的设置为准，中途改设置不影响这局
+            visibility = options.Visibility;
 
             IsGameRunning = true;
             StatusText = $"游戏运行中 · {version.Id} · Java {java.MajorVersion}";
@@ -218,6 +228,9 @@ public sealed partial class HomeViewModel : ViewModelBase
             _log.Info($"启动 {version.Id}：{launcher.BuildCommandPreview(version, _context.Paths, options)}");
 
             AppServices.NavigateToConsole?.Invoke();
+
+            var launchVisibility = visibility;
+            AppServices.Post(() => AppServices.ApplyLauncherVisibility?.Invoke(launchVisibility));
         }
         catch (OperationCanceledException)
         {

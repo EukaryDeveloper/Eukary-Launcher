@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using EukaryLauncher.Core.Models;
 using EukaryLauncher.Core.Services;
 
 namespace EukaryLauncher.App.Services;
@@ -15,6 +16,11 @@ public sealed class LauncherSettings
     public string? CustomJavaPath { get; set; }
     public bool AutoManageJava { get; set; } = true;
     public int DownloadThreads { get; set; } = 8;
+
+    /// <summary>游戏启动后启动器窗口的行为。</summary>
+    public LauncherVisibility LauncherVisibility { get; set; } = LauncherVisibility.Unchanged;
+
+    /// <summary>旧版本的开关字段，仅用于迁移：false 曾表示“游戏启动后关闭启动器”。</summary>
     public bool KeepLauncherOpen { get; set; } = true;
     public int WindowWidth { get; set; } = 854;
     public int WindowHeight { get; set; } = 480;
@@ -45,6 +51,14 @@ public sealed class SettingsService
             {
                 var text = File.ReadAllText(GamePaths.SettingsPath);
                 Current = JsonSerializer.Deserialize<LauncherSettings>(text, Options) ?? new LauncherSettings();
+
+                // 迁移：旧版只有“游戏启动后保持启动器运行”开关，false 即“启动后关闭”
+                if (!Current.KeepLauncherOpen)
+                {
+                    Current.LauncherVisibility = LauncherVisibility.CloseImmediately;
+                    Current.KeepLauncherOpen = true;
+                    Save();
+                }
                 return;
             }
         }

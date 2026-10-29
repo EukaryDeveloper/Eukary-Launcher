@@ -1,4 +1,5 @@
 using System.Windows.Threading;
+using EukaryLauncher.Core.Models;
 
 namespace EukaryLauncher.App.Services;
 
@@ -33,6 +34,12 @@ public static class AppServices
 
     /// <summary>启动游戏后自动跳到日志页。</summary>
     public static Action? NavigateToConsole { get; set; }
+
+    /// <summary>游戏启动后按设置调整主窗口（隐藏 / 最小化 / 关闭），由 MainWindow 实现。</summary>
+    public static Action<LauncherVisibility>? ApplyLauncherVisibility { get; set; }
+
+    /// <summary>游戏退出后的收尾：true 关闭启动器，false 重新显示主窗口。仅窗口被隐藏时需要。</summary>
+    public static Action<bool>? OnGameExited { get; set; }
 
     public static void Initialize()
     {

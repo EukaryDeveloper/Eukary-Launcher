@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using EukaryLauncher.App.Services;
 using EukaryLauncher.App.ViewModels;
+using EukaryLauncher.Core.Models;
 using CommunityToolkit.Mvvm.Input;
 
 namespace EukaryLauncher.App;
@@ -26,6 +27,36 @@ public partial class MainWindow : Window
         AppServices.NavigateToConsole = () =>
         {
             _vm.CurrentPage = NavPage.Console;
+        };
+
+        AppServices.ApplyLauncherVisibility = value =>
+        {
+            switch (value)
+            {
+                case LauncherVisibility.CloseImmediately:
+                    Close();
+                    break;
+                case LauncherVisibility.HideAndCloseOnExit:
+                case LauncherVisibility.HideAndRestoreOnExit:
+                    Hide();
+                    break;
+                case LauncherVisibility.Minimize:
+                    WindowState = WindowState.Minimized;
+                    break;
+            }
+        };
+
+        AppServices.OnGameExited = closeLauncher =>
+        {
+            if (closeLauncher)
+            {
+                Close();
+            }
+            else
+            {
+                Show();
+                Activate();
+            }
         };
 
         // 页面切换时播放 200ms 淡入

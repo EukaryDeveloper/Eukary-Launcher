@@ -3,6 +3,7 @@ using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EukaryLauncher.App.Services;
+using EukaryLauncher.Core.Models;
 using EukaryLauncher.Core.Services;
 
 namespace EukaryLauncher.App.ViewModels;
@@ -26,11 +27,21 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     public ObservableCollection<JavaOption> JavaOptions { get; } = new();
 
+    /// <summary>「启动器可见性」下拉框的选项，顺序即界面显示顺序。</summary>
+    public ObservableCollection<VisibilityOption> VisibilityOptions { get; } = new(
+    [
+        new VisibilityOption(LauncherVisibility.CloseImmediately, "游戏启动后立即关闭"),
+        new VisibilityOption(LauncherVisibility.HideAndCloseOnExit, "游戏启动后隐藏，游戏退出后自动关闭"),
+        new VisibilityOption(LauncherVisibility.HideAndRestoreOnExit, "游戏启动后隐藏，游戏退出后重新打开"),
+        new VisibilityOption(LauncherVisibility.Minimize, "游戏启动后最小化"),
+        new VisibilityOption(LauncherVisibility.Unchanged, "游戏启动后仍保持不变"),
+    ]);
+
     [ObservableProperty] private string gameDirectory = string.Empty;
     [ObservableProperty] private string mirrorId = string.Empty;
     [ObservableProperty] private int maxMemoryMb;
     [ObservableProperty] private int downloadThreads;
-    [ObservableProperty] private bool keepLauncherOpen;
+    [ObservableProperty] private LauncherVisibility launcherVisibility = LauncherVisibility.Unchanged;
     [ObservableProperty] private bool useCustomResolution;
     [ObservableProperty] private int windowWidth;
     [ObservableProperty] private int windowHeight;
@@ -68,7 +79,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         MirrorId = _settings.Current.MirrorId;
         MaxMemoryMb = _settings.Current.MaxMemoryMb;
         DownloadThreads = _settings.Current.DownloadThreads;
-        KeepLauncherOpen = _settings.Current.KeepLauncherOpen;
+        LauncherVisibility = _settings.Current.LauncherVisibility;
         UseCustomResolution = _settings.Current.UseCustomResolution;
         WindowWidth = _settings.Current.WindowWidth;
         WindowHeight = _settings.Current.WindowHeight;
@@ -125,7 +136,11 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _settings.Current.DownloadThreads = Math.Clamp(value, 1, 32);
         _settings.Save();
     }
-    partial void OnKeepLauncherOpenChanged(bool value) { _settings.Current.KeepLauncherOpen = value; _settings.Save(); }
+    partial void OnLauncherVisibilityChanged(LauncherVisibility value)
+    {
+        _settings.Current.LauncherVisibility = value;
+        _settings.Save();
+    }
     partial void OnUseCustomResolutionChanged(bool value) { _settings.Current.UseCustomResolution = value; _settings.Save(); }
     partial void OnWindowWidthChanged(int value) { _settings.Current.WindowWidth = value; _settings.Save(); }
     partial void OnWindowHeightChanged(int value) { _settings.Current.WindowHeight = value; _settings.Save(); }
@@ -245,3 +260,8 @@ public sealed record MirrorOption(string Id, string DisplayName)
     public override string ToString() => DisplayName;
 }
 public sealed record JavaOption(string Key, string DisplayName, string Path);
+
+public sealed record VisibilityOption(LauncherVisibility Value, string DisplayName)
+{
+    public override string ToString() => DisplayName;
+}

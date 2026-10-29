@@ -260,13 +260,14 @@
                                     <ColumnDefinition Width="3*"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
-                                    <TextBlock Text="游戏启动后保持启动器运行" Style="{StaticResource TextBody}"/>
-                                    <TextBlock Text="关掉则在游戏进程出现后退出启动器"
+                                    <TextBlock Text="启动器可见性" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="游戏启动时的启动器行为"
                                                Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
                                 </StackPanel>
-                                <ToggleButton Grid.Column="1" Style="{StaticResource Switch}"
-                                              HorizontalAlignment="Right" VerticalAlignment="Center"
-                                              IsChecked="{Binding KeepLauncherOpen, Mode=TwoWay}"/>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding VisibilityOptions}"
+                                          SelectedValue="{Binding LauncherVisibility, Mode=TwoWay}"
+                                          SelectedValuePath="Value" DisplayMemberPath="DisplayName"
+                                          HorizontalAlignment="Right" Width="240" VerticalAlignment="Center"/>
                             </Grid>
                         </ContentControl>
                     </StackPanel>

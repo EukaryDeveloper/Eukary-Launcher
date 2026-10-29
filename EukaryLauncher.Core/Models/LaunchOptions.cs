@@ -1,5 +1,24 @@
 namespace EukaryLauncher.Core.Models;
 
+/// <summary>游戏启动后启动器窗口的行为。</summary>
+public enum LauncherVisibility
+{
+    /// <summary>游戏启动后立即关闭启动器。</summary>
+    CloseImmediately = 0,
+
+    /// <summary>启动后隐藏启动器，游戏退出后自动关闭启动器。</summary>
+    HideAndCloseOnExit = 1,
+
+    /// <summary>启动后隐藏启动器，游戏退出后重新打开启动器。</summary>
+    HideAndRestoreOnExit = 2,
+
+    /// <summary>启动后把启动器最小化到任务栏。</summary>
+    Minimize = 3,
+
+    /// <summary>不做任何处理，启动器保持原样（默认）。</summary>
+    Unchanged = 4,
+}
+
 /// <summary>
 /// 一次启动需要的所有外部输入。Core 只接受这个 DTO，不认识任何 UI 类型。
 /// </summary>
@@ -37,8 +56,8 @@ public sealed record LaunchOptions
     /// <summary>额外的 JVM 参数（用户自定义）。</summary>
     public string? ExtraJvmArgs { get; init; }
 
-    /// <summary>启动后是否保持启动器运行。</summary>
-    public bool KeepLauncherOpen { get; init; } = true;
+    /// <summary>游戏启动后启动器窗口的行为。</summary>
+    public LauncherVisibility Visibility { get; init; } = LauncherVisibility.Unchanged;
 }
 
 /// <summary>
