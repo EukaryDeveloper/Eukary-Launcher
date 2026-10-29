@@ -80,6 +80,38 @@ public sealed class GameLauncher
         return process;
     }
 
+    /// <summary>
+    /// 等游戏窗口真的弹出来。返回 true 表示窗口已出现，false 表示进程已退出或超时。
+    /// “游戏启动后”就是以此为基准——点下开始按钮时游戏窗口还没创建，不能拿它当信号。
+    /// </summary>
+    public static async Task<bool> WaitForMainWindowAsync(
+        Process process,
+        int timeoutMs = 180_000,
+        int pollIntervalMs = 500)
+    {
+        var deadline = Environment.TickCount64 + (long)timeoutMs;
+
+        while (true)
+        {
+            if (process.HasExited) return false;
+
+            try
+            {
+                // MainWindowHandle 有缓存，必须 Refresh 才能拿到新创建的窗口
+                process.Refresh();
+                if (process.MainWindowHandle != IntPtr.Zero) return true;
+            }
+            catch
+            {
+                // 进程可能刚好退出，取不到就当作没起来
+                return false;
+            }
+
+            if (Environment.TickCount64 >= deadline) return false;
+            await Task.Delay(pollIntervalMs).ConfigureAwait(false);
+        }
+    }
+
     public static string ResolveJava(string javaPath)
     {
         // 用户可能选了 javaw.exe（无控制台），但我们需要捕获 stdout，换成同目录的 java.exe

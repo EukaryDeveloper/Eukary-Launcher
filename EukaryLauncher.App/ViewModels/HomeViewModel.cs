@@ -21,6 +21,9 @@ public sealed partial class HomeViewModel : ViewModelBase
     private CancellationTokenSource? _cts;
     private Process? _gameProcess;
 
+    /// <summary>本次启动是否真的把启动器窗口藏起来了（决定游戏退出时要不要恢复）。</summary>
+    private bool _launcherHidden;
+
     public HomeViewModel(SettingsService settings)
     {
         _settings = settings;
@@ -79,6 +82,40 @@ public sealed partial class HomeViewModel : ViewModelBase
     public override async Task OnNavigatedAsync()
     {
         await RefreshJavaStatusAsync();
+    }
+
+    /// <summary>
+    /// 等游戏窗口真的出现，再按「启动器可见性」的档位处理启动器窗口。
+    /// 游戏没起来（崩溃 / 窗口一直没出现）就什么都不做，避免把启动器白关掉。
+    /// </summary>
+    private async Task WaitForGameWindowThenApplyAsync(Process process, LauncherVisibility visibility)
+    {
+        try
+        {
+            var appeared = await GameLauncher.WaitForMainWindowAsync(process).ConfigureAwait(false);
+            if (!appeared)
+            {
+                _log.Warn("游戏窗口一直没出现，启动器保持原样");
+                return;
+            }
+
+            var title = "";
+            try { title = process.MainWindowTitle; } catch { /* 拿不到标题不影响 */ }
+
+            AppServices.Post(() =>
+            {
+                _log.Info($"游戏窗口已出现（{title}），按设置处理启动器窗口：{visibility}");
+                if (visibility is LauncherVisibility.HideAndCloseOnExit
+                    or LauncherVisibility.HideAndRestoreOnExit)
+                    _launcherHidden = true;
+
+                AppServices.ApplyLauncherVisibility?.Invoke(visibility);
+            });
+        }
+        catch (Exception ex)
+        {
+            _log.Warn("等待游戏窗口时出错：" + ex.Message);
+        }
     }
 
     private void SyncInstalledVersions()
@@ -207,11 +244,13 @@ public sealed partial class HomeViewModel : ViewModelBase
                     ProgressText = "";
                     _log.Info($"游戏进程结束，退出码 {code}");
 
-                    // 游戏运行期间启动器被隐藏的话，按设置恢复显示或退出
-                    if (visibility == LauncherVisibility.HideAndCloseOnExit)
+                    // 只有真的隐藏过启动器，退出时才需要恢复/关闭；
+                    // 游戏没起来（窗口还没弹出就崩了）的情况下不能顺手把启动器关掉
+                    if (visibility == LauncherVisibility.HideAndCloseOnExit && _launcherHidden)
                         AppServices.OnGameExited?.Invoke(true);
-                    else if (visibility == LauncherVisibility.HideAndRestoreOnExit)
+                    else if (visibility == LauncherVisibility.HideAndRestoreOnExit && _launcherHidden)
                         AppServices.OnGameExited?.Invoke(false);
+                    _launcherHidden = false;
                 });
             };
 
@@ -230,7 +269,11 @@ public sealed partial class HomeViewModel : ViewModelBase
             AppServices.NavigateToConsole?.Invoke();
 
             var launchVisibility = visibility;
-            AppServices.Post(() => AppServices.ApplyLauncherVisibility?.Invoke(launchVisibility));
+            if (launchVisibility != LauncherVisibility.Unchanged)
+            {
+                // “游戏启动后”以游戏窗口真的弹出来为准，不是点下开始按钮的那一刻
+                _ = WaitForGameWindowThenApplyAsync(process, launchVisibility);
+            }
         }
         catch (OperationCanceledException)
         {
