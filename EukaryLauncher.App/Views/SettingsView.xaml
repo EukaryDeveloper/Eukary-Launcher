@@ -179,8 +179,8 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ============================ 启动 ============================ -->
-                <TextBlock Text="启动" Style="{StaticResource SettingsSectionTitle}"/>
+                <!-- ============================ 全局设置 ============================ -->
+                <TextBlock Text="全局设置" Style="{StaticResource SettingsSectionTitle}"/>
                 <Border Style="{StaticResource SettingsGroup}">
                     <StackPanel>
                         <ContentControl Style="{StaticResource SettingsRowFirst}">

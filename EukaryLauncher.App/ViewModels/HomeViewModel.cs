@@ -242,6 +242,11 @@ public sealed partial class HomeViewModel : ViewModelBase
         StatusText = "正在取消…";
     }
 
+    /// <summary>版本设置：每个版本独立的内存 / 窗口 / JVM 参数，覆盖「全局设置」。页面还没做，先给个入口。</summary>
+    [RelayCommand]
+    private void OpenVersionSettings() =>
+        AppServices.Toasts.Info("版本设置开发中：将支持按版本覆盖全局设置（内存、窗口、JVM 参数）");
+
     private async Task<VersionJson?> EnsureVersionAsync(string versionId, CancellationToken ct)
     {
         if (_context.IsInstalled(versionId))

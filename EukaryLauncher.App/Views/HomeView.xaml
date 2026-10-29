@@ -53,6 +53,11 @@
                                 Command="{Binding LaunchCommand}"
                                 IsEnabled="{Binding CanLaunch}"/>
 
+                        <Button Content="版本设置" Style="{StaticResource SecondaryButton}"
+                                Margin="0,12,0,0" MinWidth="120" Height="32"
+                                ToolTip="为当前选择的版本单独设置内存、窗口和 JVM 参数"
+                                Command="{Binding OpenVersionSettingsCommand}"/>
+
                         <Button Content="取消" Style="{StaticResource GhostButton}"
                                 Margin="0,12,0,0" MinWidth="120"
                                 Command="{Binding CancelCommand}"
