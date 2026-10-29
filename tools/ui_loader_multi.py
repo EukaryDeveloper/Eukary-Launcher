@@ -10,7 +10,7 @@ import time
 import uiautomation as auto
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from ui_walk import Walker  # noqa: E402
+from ui_walk import Walker, find_all  # noqa: E402
 
 auto.uiautomation.SetGlobalSearchTimeout(3)
 
@@ -19,34 +19,6 @@ EXE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "EukaryLaunc
                                    "bin", "Debug", "net8.0-windows", "win-x64", "EukaryLauncher.exe"))
 
 TARGET = "1.20.4"
-
-
-TYPES = {"Edit": "EditControl", "Button": "ButtonControl", "Text": "TextControl",
-         "ListItem": "ListItemControl", "CheckBox": "CheckBoxControl"}
-
-
-def find_all(win, kind):
-    """这版的 uiautomation 没有 FindAll，只能自己遍历 UIA 树。"""
-    wanted = TYPES[kind]
-    out = []
-
-    def walk(ctrl, depth):
-        if depth > 40:
-            return
-        try:
-            children = ctrl.GetChildren()
-        except Exception:
-            return
-        for child in children:
-            try:
-                if child.ControlTypeName == wanted:
-                    out.append(child)
-            except Exception:
-                pass
-            walk(child, depth + 1)
-
-    walk(win, 0)
-    return out
 
 
 def click_named_any(win, name, kinds=("ListItem", "Text", "Button")):

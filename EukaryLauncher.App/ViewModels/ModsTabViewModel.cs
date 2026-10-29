@@ -185,9 +185,6 @@ public sealed partial class ModsTabViewModel : ViewModelBase
     [RelayCommand]
     private Task LoadMoreAsync() => DoSearchAsync(reset: false);
 
-    /// <summary>自动化测试直接改属性不会触发防抖，用它踢一脚立刻重搜。</summary>
-    public void KickSearch() => _ = DebouncedSearchAsync(CancellationToken.None);
-
     private async Task DoSearchAsync(bool reset)
     {
         _cts?.Cancel();

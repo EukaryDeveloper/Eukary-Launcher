@@ -114,6 +114,67 @@ class Walker:
                 pass
 
 
+CONTROL_TYPES = {
+    "Edit": "EditControl", "Button": "ButtonControl", "Text": "TextControl",
+    "ListItem": "ListItemControl", "CheckBox": "CheckBoxControl",
+    "List": "ListControl", "Combo": "ComboBoxControl",
+}
+
+
+def find_all(root, kind):
+    """这版的 uiautomation 没有 Control.FindAll，只能自己递归 UIA 树按类型过滤。
+
+    注意：Collapsed 的元素也还在树里，判断可见性别只看在不在。
+    """
+    wanted = CONTROL_TYPES[kind]
+    out = []
+
+    def walk(ctrl, depth):
+        if depth > 40:
+            return
+        try:
+            children = ctrl.GetChildren()
+        except Exception:
+            return
+        for child in children:
+            try:
+                if child.ControlTypeName == wanted:
+                    out.append(child)
+            except Exception:
+                pass
+            walk(child, depth + 1)
+
+    walk(root, 0)
+    return out
+
+
+def find_all(win, kind):
+    """这版的 uiautomation 没有 Control.FindAll，只能自己递归 UIA 树按类型名过滤。
+
+    注意：Collapsed 的元素也仍然在树里，判断可见性不能只看在不在。
+    """
+    wanted = CONTROL_TYPES[kind]
+    out = []
+
+    def walk(ctrl, depth):
+        if depth > 40:
+            return
+        try:
+            children = ctrl.GetChildren()
+        except Exception:
+            return
+        for child in children:
+            try:
+                if child.ControlTypeName == wanted:
+                    out.append(child)
+            except Exception:
+                pass
+            walk(child, depth + 1)
+
+    walk(win, 0)
+    return out
+
+
 def main():
     exe = sys.argv[1] if len(sys.argv) > 1 else os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "EukaryLauncher.App", "bin",

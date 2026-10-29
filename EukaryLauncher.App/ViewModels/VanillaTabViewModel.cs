@@ -21,12 +21,15 @@ public sealed class InstalledVersionCard
         : string.Join(" · ", Loaders.Select(LoaderIds.DisplayName));
 }
 
-public sealed class AvailableVersionRow
+public sealed partial class AvailableVersionRow : ObservableObject
 {
     public required string Id { get; init; }
     public required string Type { get; init; }
     public required DateTimeOffset ReleaseTime { get; init; }
-    public bool Installed { get; set; }
+
+    /// <summary>装好了会就地刷新，不用重建整个清单（否则滚动位置会被打回顶部）。</summary>
+    [ObservableProperty] private bool installed;
+
     public string ReleaseTimeText => ReleaseTime.LocalDateTime.ToString("yyyy-MM-dd");
     public string TypeText => Type switch
     {
@@ -53,7 +56,11 @@ public sealed partial class VanillaTabViewModel : ViewModelBase
 
     public VanillaTabViewModel()
     {
-        _context.InstalledVersionsChanged += () => AppServices.Post(RefreshInstalled);
+        _context.InstalledVersionsChanged += () => AppServices.Post(() =>
+        {
+            RefreshInstalled();
+            RefreshInstalledMarks();
+        });
     }
 
     public ObservableCollection<InstalledVersionCard> Installed { get; } = new();
@@ -137,7 +144,6 @@ public sealed partial class VanillaTabViewModel : ViewModelBase
                 })
                 .ToList();
             ApplyFilter();
-            StatusText = $"共 {_allRows.Count} 个版本";
         }
         catch (Exception ex)
         {
@@ -152,6 +158,10 @@ public sealed partial class VanillaTabViewModel : ViewModelBase
 
     private void ApplyFilter()
     {
+        // 清单有 900+ 条，这里绝对不能再截断——
+        // 同时开了「显示快照」和「显示远古版本」要能一路翻到最早的 rd-xxx。
+        var installed = InstalledSet();
+
         IEnumerable<AvailableVersionRow> rows = _allRows;
 
         rows = rows.Where(r => r.Type == "release"
@@ -161,15 +171,26 @@ public sealed partial class VanillaTabViewModel : ViewModelBase
         if (!string.IsNullOrWhiteSpace(SearchText))
             rows = rows.Where(r => r.Id.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
-        var snapshot = rows.Take(500).ToList();
+        var filtered = rows.ToList();
+        foreach (var row in filtered) row.Installed = installed.Contains(row.Id);
 
         Available.Clear();
-        foreach (var row in snapshot)
-        {
-            row.Installed = _context.IsInstalled(row.Id);
-            Available.Add(row);
-        }
+        foreach (var row in filtered) Available.Add(row);
+
+        StatusText = filtered.Count == _allRows.Count
+            ? $"共 {_allRows.Count} 个版本"
+            : $"显示 {filtered.Count} / 共 {_allRows.Count} 个版本";
     }
+
+    /// <summary>已装标记就地刷新，不重建列表，免得把用户的滚动位置打回顶部。</summary>
+    private void RefreshInstalledMarks()
+    {
+        var installed = InstalledSet();
+        foreach (var row in Available) row.Installed = installed.Contains(row.Id);
+    }
+
+    private HashSet<string> InstalledSet() =>
+        new(_context.InstalledVersions, StringComparer.OrdinalIgnoreCase);
 
     [RelayCommand]
     private void Continue(AvailableVersionRow? row)
