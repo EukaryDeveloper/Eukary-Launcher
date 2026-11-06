@@ -167,6 +167,20 @@ public sealed partial class ModDetailViewModel : ViewModelBase
             .ToArray();
     }
 
+    /// <summary>
+    /// 某个游戏版本是否符合当前通道（正式版 / 快照版）。
+    /// 清单没拉到时不过滤，退回旧行为。
+    /// </summary>
+    private bool PassesChannel(string gameVersion)
+    {
+        if (McVersionCatalog.Releases.Count == 0 && McVersionCatalog.Snapshots.Count == 0)
+            return true;
+
+        return ModSearchOptions.Channel == ModReleaseChannel.Snapshot
+            ? McVersionCatalog.IsSnapshot(gameVersion)
+            : McVersionCatalog.IsRelease(gameVersion);
+    }
+
     private void RebuildGroups()
     {
         Groups.Clear();
@@ -175,6 +189,7 @@ public sealed partial class ModDetailViewModel : ViewModelBase
 
         var groups = new List<ModVersionGroup>();
         var ordered = _versions.OrderByDescending(v => v.DatePublished);
+        var visibleCount = 0;
 
         foreach (var version in ordered)
         {
@@ -185,6 +200,12 @@ public sealed partial class ModDetailViewModel : ViewModelBase
 
             foreach (var gameVersion in version.GameVersions)
             {
+                // 通道过滤：正式版通道不出现目标快照的模组版本，反之亦然
+                if (!PassesChannel(gameVersion))
+                    continue;
+
+                if (filter.Length == 0) visibleCount++;
+
                 if (filter.Length > 0 && !string.Equals(gameVersion, filter, StringComparison.OrdinalIgnoreCase))
                     continue;
 
@@ -207,7 +228,7 @@ public sealed partial class ModDetailViewModel : ViewModelBase
         if (Groups.Count > 0) Groups[0].IsExpanded = true;
 
         StatusText = filter.Length == 0
-            ? $"共 {_versions.Count} 个版本，按加载器与游戏版本分组"
+            ? $"共 {visibleCount} 个版本，按加载器与游戏版本分组"
             : $"Minecraft {filter} · 共 {Groups.Sum(g => g.Rows.Count)} 个可安装文件";
     }
 
