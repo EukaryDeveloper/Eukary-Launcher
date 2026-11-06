@@ -117,7 +117,7 @@ class Walker:
 CONTROL_TYPES = {
     "Edit": "EditControl", "Button": "ButtonControl", "Text": "TextControl",
     "ListItem": "ListItemControl", "CheckBox": "CheckBoxControl",
-    "List": "ListControl", "Combo": "ComboBoxControl",
+    "List": "ListControl", "Combo": "ComboBoxControl", "Radio": "RadioButtonControl",
 }
 
 

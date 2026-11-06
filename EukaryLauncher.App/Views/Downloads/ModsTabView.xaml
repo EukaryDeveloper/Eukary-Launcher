@@ -48,7 +48,13 @@
                         <ComboBox IsEditable="True" Width="150"
                                   ToolTip="可以直接输入版本号，也可以下拉选择"
                                   ItemsSource="{Binding GameVersions}"
-                                  Text="{Binding VersionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                  Text="{Binding VersionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <ComboBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ComboBox.ItemsPanel>
+                        </ComboBox>
                     </StackPanel>
                 </Grid>
 
@@ -74,6 +80,13 @@
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <ComboBox ItemsSource="{Binding Sources}" SelectedItem="{Binding SelectedSource, Mode=TwoWay}"
                                   Width="120" IsEnabled="False"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <RadioButton Content="正式版" Margin="0,0,6,0"
+                                     IsChecked="{Binding IsReleaseChannel, Mode=TwoWay}"/>
+                        <RadioButton Content="快照版"
+                                     IsChecked="{Binding IsSnapshotChannel, Mode=TwoWay}"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>

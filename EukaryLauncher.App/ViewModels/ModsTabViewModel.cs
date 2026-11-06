@@ -97,6 +97,60 @@ public sealed partial class ModsTabViewModel : ViewModelBase
     public IReadOnlyList<string> LoaderList { get; } = new[] { "全部", "Fabric", "Forge", "NeoForge", "Quilt" };
     public IReadOnlyList<string> Sources { get; } = new[] { "Modrinth" };
 
+    /// <summary>「来源」右侧的通道单选：正式版 / 快照版。与详情页的版本筛选条共用 ModSearchOptions。</summary>
+    [ObservableProperty] private bool isReleaseChannel = true;
+    [ObservableProperty] private bool isSnapshotChannel;
+
+    private bool _suppressFilterSearch;
+
+    partial void OnIsReleaseChannelChanged(bool value)
+    {
+        if (value) SwitchChannel(ModReleaseChannel.Release);
+    }
+
+    partial void OnIsSnapshotChannelChanged(bool value)
+    {
+        if (value) SwitchChannel(ModReleaseChannel.Snapshot);
+    }
+
+    private void SwitchChannel(ModReleaseChannel channel)
+    {
+        if (ModSearchOptions.Channel == channel && GameVersions.Count > 1) return;
+        ModSearchOptions.Channel = channel;
+        _ = OnChannelChangedAsync();
+    }
+
+    private async Task OnChannelChangedAsync()
+    {
+        try
+        {
+            await McVersionCatalog.EnsureLoadedAsync(_context);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("版本清单拉取失败（模组页）：" + ex.Message);
+        }
+
+        GameVersions = BuildVersionList();
+        OnPropertyChanged(nameof(GameVersions));
+
+        // 原来选中的版本在新通道里未必存在，重置为「全部」；
+        // 程序化赋值不该触发防抖搜索，下面统一刷一次
+        _suppressFilterSearch = true;
+        VersionFilter = "全部";
+        _suppressFilterSearch = false;
+
+        if (HasSearched) await DoSearchAsync(reset: true);
+    }
+
+    private IReadOnlyList<string> BuildVersionList()
+    {
+        var versions = ModSearchOptions.Channel == ModReleaseChannel.Snapshot
+            ? McVersionCatalog.Snapshots
+            : McVersionCatalog.Releases;
+        return new[] { "全部" }.Concat(versions).ToList();
+    }
+
     /// <summary>版本筛选：下拉可选、也可以直接手输版本号，「全部」或空 = 不过滤。</summary>
     [ObservableProperty] private string versionFilter = "全部";
 
@@ -105,7 +159,7 @@ public sealed partial class ModsTabViewModel : ViewModelBase
     /// <summary>手输版本号时防抖 500ms，停顿了才重新搜索。</summary>
     partial void OnVersionFilterChanged(string value)
     {
-        if (!HasSearched) return;
+        if (!HasSearched || _suppressFilterSearch) return;
 
         _versionDebounceCts?.Cancel();
         _versionDebounceCts = new CancellationTokenSource();
@@ -163,14 +217,8 @@ public sealed partial class ModsTabViewModel : ViewModelBase
     {
         try
         {
-            var manifest = await _context.Installer.FetchManifestAsync(false);
-            var releases = manifest.Versions
-                .Where(v => v.Type == "release")
-                .Select(v => v.Id)
-                .Take(60)
-                .ToList();
-
-            GameVersions = new[] { "全部" }.Concat(releases).ToList();
+            await McVersionCatalog.EnsureLoadedAsync(_context);
+            GameVersions = BuildVersionList();
             OnPropertyChanged(nameof(GameVersions));
         }
         catch (Exception ex)

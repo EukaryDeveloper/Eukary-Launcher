@@ -120,15 +120,8 @@ public sealed partial class ModDetailViewModel : ViewModelBase
         {
             _versions = (await _modrinth.GetVersionsAsync(_project.ProjectId)).ToList();
 
-            // 只列正式 / 测试 / 内部版，把 MC 版本按新到旧排出来做筛选条
-            var gameVersions = _versions
-                .SelectMany(v => v.GameVersions)
-                .Distinct()
-                .OrderByDescending(v => v, new GameVersionComparer())
-                .Take(60)
-                .ToList();
-
-            VersionChips = new[] { "全部" }.Concat(gameVersions).ToList();
+            // 版本筛选条跟随模组页选的通道（正式版 / 快照版），顺序跟官方清单一致（新到旧）
+            VersionChips = BuildVersionChips();
             OnPropertyChanged(nameof(VersionChips));
 
             RebuildGroups();
@@ -144,6 +137,34 @@ public sealed partial class ModDetailViewModel : ViewModelBase
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>
+    /// 把该模组支持的游戏版本按当前通道过滤。
+    /// 优先用官方清单定顺序和类型；清单没拉到就退回旧逻辑（全部保留，按数字排序）。
+    /// </summary>
+    private string[] BuildVersionChips()
+    {
+        var supported = _versions.SelectMany(v => v.GameVersions).Distinct().ToList();
+        var ordered = ModSearchOptions.Channel == ModReleaseChannel.Snapshot
+            ? McVersionCatalog.Snapshots
+            : McVersionCatalog.Releases;
+
+        if (ordered.Count > 0)
+        {
+            var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < ordered.Count; i++)
+                index.TryAdd(ordered[i], i);
+
+            return new[] { "全部" }
+                .Concat(supported.Where(index.ContainsKey).OrderBy(id => index[id]).Take(60))
+                .ToArray();
+        }
+
+        // 清单不可用时的兜底：不做通道过滤，按老办法排
+        return new[] { "全部" }
+            .Concat(supported.OrderByDescending(v => v, new GameVersionComparer()).Take(60))
+            .ToArray();
     }
 
     private void RebuildGroups()
