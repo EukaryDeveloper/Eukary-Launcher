@@ -38,15 +38,14 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Toast：左下角堆叠，左侧竖条按类型着色 -->
+        <!-- Toast：左下角堆叠，左侧竖条按类型着色。
+             注意不能加 BitmapEffect（如 DropShadowEffect）——切页重绘时带效果的区域
+             会被渲染线程跳过，Toast 会“消失”但视觉树一切正常（脏区域 bug，2026-11-06 实测） -->
         <DataTemplate DataType="{x:Type svc:ToastItem}">
             <Border Background="{StaticResource BgElevatedBrush}"
                     BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
                     CornerRadius="{StaticResource RadiusMd}" Padding="0" Margin="0,8,0,0"
                     MinWidth="260" MaxWidth="400" SnapsToDevicePixels="True">
-                <Border.Effect>
-                    <DropShadowEffect Color="#000000" Opacity="0.4" BlurRadius="16" ShadowDepth="2"/>
-                </Border.Effect>
                 <Border.RenderTransform>
                     <TranslateTransform/>
                 </Border.RenderTransform>
