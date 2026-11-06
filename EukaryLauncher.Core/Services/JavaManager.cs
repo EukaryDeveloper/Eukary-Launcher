@@ -97,7 +97,7 @@ public sealed class JavaManager
         return result.OrderBy(x => x.MajorVersion).ToList();
     }
 
-    /// <summary>找到一个可用的 Java：优先托管的，其次系统 PATH 里的。</summary>
+    /// <summary>找到一个可用的 Java：优先托管的，其次系统里装过的。</summary>
     public JavaRuntimeInfo? FindSuitable(int requiredMajor)
     {
         var target = NormalizeMajor(requiredMajor);
@@ -106,15 +106,32 @@ public sealed class JavaManager
         var exact = managed.FirstOrDefault(x => x.MajorVersion == target);
         if (exact is not null) return exact;
 
-        // Java 向下兼容：21 能跑要求 17 的版本
-        var higher = managed.Where(x => x.MajorVersion >= target).OrderBy(x => x.MajorVersion).FirstOrDefault();
-        if (higher is not null) return higher;
+        // 新版 MC（声明 Java 17+）用更高的 Java 跑没有问题；
+        // 老版本（声明 8）不行——lwjgl2 / launchwrapper 在新 Java 上起不来，
+        // 不能拿"向下兼容"硬顶，宁可交给上层去下载托管的 JRE 8。
+        if (target >= 17)
+        {
+            var higher = managed.Where(x => x.MajorVersion >= target).OrderBy(x => x.MajorVersion).FirstOrDefault();
+            if (higher is not null) return higher;
+        }
 
-        return FindSystemJava();
+        // 系统里可能同时装了好几个 Java（PATH 顺序不定），按版本需求挑，
+        // 不要拿 PATH 里第一个凑合——老版本挑到 Java 25 照样起不来
+        foreach (var system in FindAllSystemJava())
+            if (IsVersionUsable(system.MajorVersion, target)) return system;
+
+        return null;
     }
 
-    /// <summary>在 PATH / 常见安装目录里找系统 java.exe。</summary>
-    public static JavaRuntimeInfo? FindSystemJava()
+    /// <summary>某个已装 Java 能否满足版本需求：17+ 允许向上，老版本只认精确匹配。</summary>
+    private static bool IsVersionUsable(int major, int target) =>
+        target >= 17 ? major >= target : major == target;
+
+    /// <summary>系统里第一个能探测到的 java.exe（设置页展示用）。</summary>
+    public static JavaRuntimeInfo? FindSystemJava() => FindAllSystemJava().FirstOrDefault();
+
+    /// <summary>在 PATH / 常见安装目录里找全部可用的系统 java.exe。</summary>
+    public static List<JavaRuntimeInfo> FindAllSystemJava()
     {
         var candidates = new List<string>();
 
@@ -148,26 +165,28 @@ public sealed class JavaManager
             }
         }
 
+        var result = new List<JavaRuntimeInfo>();
+
         foreach (var candidate in candidates)
         {
             try
             {
                 if (!File.Exists(candidate)) continue;
                 var major = QueryJavaMajor(candidate);
-                if (major > 0)
+                if (major > 0 && result.All(x => !string.Equals(x.ExecutablePath, candidate, StringComparison.OrdinalIgnoreCase)))
                 {
-                    return new JavaRuntimeInfo
+                    result.Add(new JavaRuntimeInfo
                     {
                         MajorVersion = major,
                         DisplayName = $"系统 Java {major}",
                         ExecutablePath = candidate,
-                    };
+                    });
                 }
             }
             catch { /* 忽略探测失败 */ }
         }
 
-        return null;
+        return result;
     }
 
     /// <summary>跑 java -version 解析主版本号。</summary>
@@ -223,8 +242,10 @@ public sealed class JavaManager
         IProgress<FileProgress>? progress = null,
         CancellationToken ct = default)
     {
+        // FindSuitable 只会返回满足兼容性规则的（老版本精确匹配，17+ 允许向上），
+        // 直接用即可；找不到就去下载对应大版本的托管 JRE
         var existing = FindSuitable(requiredMajor);
-        if (existing is not null && existing.MajorVersion >= NormalizeMajor(requiredMajor))
+        if (existing is not null)
             return existing;
 
         var target = NormalizeMajor(requiredMajor);

@@ -41,6 +41,10 @@ public sealed class GameLauncher
     {
         var java = ResolveJava(options.JavaPath);
 
+        // 老版本（jar 带 lang/ 目录）在启动前修正 options.txt 的语言大小写，
+        // 否则同目录混装的新版本写下的 lang:zh_cn 会让它一启动就 NPE
+        LegacyCompat.NormalizeLangCase(paths.VersionJarPath(options.VersionId), paths.Root);
+
         var classPath = string.Join(ArgumentBuilder.ClassPathSeparator,
             ArgumentBuilder.BuildClassPath(version, paths, options.VersionId));
         var logConfig = FindLogConfig(version, paths);

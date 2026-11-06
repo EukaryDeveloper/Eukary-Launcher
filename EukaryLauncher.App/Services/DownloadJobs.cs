@@ -27,7 +27,17 @@ public static class DownloadJobs
         job.Runner = async (j, ct) =>
         {
             var ctx = AppServices.Context;
-            await ctx.Installer.InstallAsync(entry, DownloadManager.RouteByStage(j), ct);
+            try
+            {
+                await ctx.Installer.InstallAsync(entry, DownloadManager.RouteByStage(j), ct);
+            }
+            catch
+            {
+                // 安装器已把残缺的版本目录回滚掉，这里刷新列表让 UI 立刻回到真实状态，
+                // 不然要等重启才会发现列表里多了个启动不了的"幽灵版本"
+                ctx.RefreshInstalled();
+                throw;
+            }
             ctx.RefreshInstalled();
         };
 

@@ -127,8 +127,32 @@ public sealed class VersionInstaller
         void Report(InstallStage stage, string msg, int done = 0, int total = 0, long recv = 0, long? totalBytes = null, double speed = 0)
             => progress?.Report(new InstallProgress(stage, msg, done, total, recv, totalBytes, speed));
 
+        // 版本 JSON 和主 jar 是最先落盘的两样东西。装到一半失败时若不清理，
+        // ListInstalled()（按 json + jar 判定）会把半成品当成已安装——
+        // 重启启动器后它照样出现在版本列表里，但依赖库残缺，一启动就崩。
+        // 回滚仅针对本次新装的版本；开始前就已完整的（重装/修复）不动。
+        var wasComplete = File.Exists(_paths.VersionJsonPath(entry.Id))
+                       && File.Exists(_paths.VersionJarPath(entry.Id));
+
+        try
+        {
+            return await InstallAsyncCore(entry, progress, ct, Report);
+        }
+        catch
+        {
+            if (!wasComplete) TryDeleteVersionDir(entry.Id);
+            throw;
+        }
+    }
+
+    private async Task<VersionJson> InstallAsyncCore(
+        VersionManifestEntry entry,
+        IProgress<InstallProgress>? progress,
+        CancellationToken ct,
+        Action<InstallStage, string, int, int, long, long?, double> report)
+    {
         // 1. 版本 JSON + inheritsFrom 链
-        Report(InstallStage.VersionJson, $"解析版本 {entry.Id}");
+        report(InstallStage.VersionJson, $"解析版本 {entry.Id}", 0, 0, 0, null, 0);
         var version = await FetchVersionJsonAsync(entry, ct);
 
         var parentCache = new Dictionary<string, VersionJson>(StringComparer.Ordinal);
@@ -152,7 +176,7 @@ public sealed class VersionInstaller
             return downloaded;
         });
 
-        return await InstallCoreAsync(version, entry.Id, progress, ct, Report);
+        return await InstallCoreAsync(version, entry.Id, progress, ct, report);
     }
 
     /// <summary>把一份版本 JSON 落到 versions/&lt;versionId&gt;/&lt;versionId&gt;.json。</summary>
@@ -221,6 +245,13 @@ public sealed class VersionInstaller
                     DisplayName = Path.GetFileName(mavenPath),
                     FallbackUrls = new[] { _fallback.GetLibraryUrl(a.Url, mavenPath) },
                 });
+            }
+            else if (lib.Downloads?.Classifiers is not null)
+            {
+                // natives-only 库（旧版的 lwjgl-platform / jinput-platform 就是这类）：
+                // 官方上游只有带 classifier 的 jar，根本没有裸 artifact，
+                // 走下面的 maven 坐标兜底必然 404、还会把整批安装拖死。
+                // 它真正需要的是循环末尾单独处理的 natives jar，这里跳过即可。
             }
             else
             {
@@ -409,5 +440,19 @@ public sealed class VersionInstaller
             .Where(id => File.Exists(_paths.VersionJarPath(id)))
             .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    /// <summary>尽力删除一个版本目录（回滚残缺安装用）。删不掉也不抛。</summary>
+    private void TryDeleteVersionDir(string versionId)
+    {
+        try
+        {
+            var dir = _paths.VersionDir(versionId);
+            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+        }
+        catch
+        {
+            // 文件被占用之类的情况：留着也不影响判定，下次重装会覆盖
+        }
     }
 }
