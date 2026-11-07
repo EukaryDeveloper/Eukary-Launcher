@@ -11,6 +11,7 @@ public enum JobStatus
     Succeeded,
     Failed,
     Cancelled,
+    Paused,
 }
 
 /// <summary>任务里的一个子步骤（下载依赖库、下载资源文件、下载某个模组文件……）。</summary>
@@ -31,6 +32,7 @@ public sealed partial class DownloadStep : ObservableObject
         JobStatus.Succeeded => "完成",
         JobStatus.Failed => "失败",
         JobStatus.Cancelled => "已取消",
+        JobStatus.Paused => "已暂停",
         _ => "",
     };
 
@@ -64,12 +66,19 @@ public sealed partial class DownloadJob : ObservableObject
     [ObservableProperty] private string? errorMessage;
     [ObservableProperty] private string currentText = "";
 
+    /// <summary>暂停时由队列置位，RunAsync 收到取消异常后按它区分「已暂停」和「已取消」。</summary>
+    [ObservableProperty] private bool pauseRequested;
+
     public double OverallProgress => Steps.Count == 0 ? 0 : Steps.Average(s => s.Progress);
     public int OverallPercent => (int)Math.Round(OverallProgress);
-    public bool CanRetry => Status is JobStatus.Failed or JobStatus.Cancelled;
+    public bool CanPause => Status == JobStatus.Running;
+    public bool CanCancel => Status is JobStatus.Pending or JobStatus.Running;
+    public bool CanRetry => Status is JobStatus.Failed or JobStatus.Cancelled or JobStatus.Paused;
 
     partial void OnStatusChanged(JobStatus value)
     {
+        OnPropertyChanged(nameof(CanPause));
+        OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(CanRetry));
         OnPropertyChanged(nameof(StatusText));
     }
@@ -81,6 +90,7 @@ public sealed partial class DownloadJob : ObservableObject
         JobStatus.Succeeded => "已完成",
         JobStatus.Failed => "失败",
         JobStatus.Cancelled => "已取消",
+        JobStatus.Paused => "已暂停",
         _ => "",
     };
 
@@ -114,25 +124,26 @@ public sealed partial class DownloadJob : ObservableObject
 }
 
 /// <summary>
-/// 串行下载队列。任务按加入顺序排，同一时刻只跑一个，
-/// 成功就销毁卡片并弹通知，失败则保留卡片并写明原因，点一下可以重新排队。
+/// 下载队列，最多同时跑 MaxConcurrent 个任务。
+/// 一个任务卡住不会拖死整个队列——空出来的槽位会继续接后面的任务。
+/// 成功就销毁卡片并弹通知，失败/暂停/取消则保留卡片，点一下或按「继续」重新排队。
 /// </summary>
 public sealed class DownloadManager
 {
+    /// <summary>同时进行的任务上限。安装是重 IO 活，太多并行会互相抢磁盘。</summary>
+    private const int MaxConcurrent = 3;
+
     private readonly LogService _log = LogService.Instance;
     private readonly ToastService _toast;
 
-    private bool _pumping;
-    private CancellationTokenSource? _cts;
+    /// <summary>每个进行中任务一个取消源，暂停和取消都靠触发它。</summary>
+    private readonly Dictionary<Guid, CancellationTokenSource> _ctsMap = new();
 
     public DownloadManager(ToastService toast) => _toast = toast;
 
     public ObservableCollection<DownloadJob> Jobs { get; } = new();
 
     public event Action? Changed;
-
-    public bool HasPending => Jobs.Any(j => j.Status == JobStatus.Pending);
-    public bool HasRunning => Jobs.Any(j => j.Status == JobStatus.Running);
 
     public void Enqueue(DownloadJob job)
     {
@@ -144,7 +155,7 @@ public sealed class DownloadManager
         _ = PumpAsync();
     }
 
-    /// <summary>失败/取消的卡片点一下，重新排队。</summary>
+    /// <summary>失败/取消/暂停的卡片点一下，重新排队（下载续传靠磁盘上的 .part，进度条会重新爬）。</summary>
     public void Retry(DownloadJob job)
     {
         if (!job.CanRetry) return;
@@ -154,11 +165,46 @@ public sealed class DownloadManager
             foreach (var step in job.Steps) step.Reset();
             job.ErrorMessage = null;
             job.CurrentText = "";
+            job.PauseRequested = false;
             job.Status = JobStatus.Pending;
             Changed?.Invoke();
         });
 
         _ = PumpAsync();
+    }
+
+    /// <summary>取消任务。排队中的直接标记；进行中的触发取消令牌，Runner 会以 OperationCanceledException 收场。</summary>
+    public void Cancel(DownloadJob job)
+    {
+        if (job.Status == JobStatus.Pending)
+        {
+            AppServices.Post(() =>
+            {
+                job.ErrorMessage = "已取消";
+                job.Status = JobStatus.Cancelled;
+                Changed?.Invoke();
+            });
+            return;
+        }
+        if (job.Status != JobStatus.Running) return;
+
+        AppServices.Post(() =>
+        {
+            job.PauseRequested = false;
+            if (_ctsMap.TryGetValue(job.Id, out var cts)) cts.Cancel();
+        });
+    }
+
+    /// <summary>暂停任务：和取消一样走取消令牌，但卡片状态记为「已暂停」，内容留在原地等继续。</summary>
+    public void Pause(DownloadJob job)
+    {
+        if (job.Status != JobStatus.Running) return;
+
+        AppServices.Post(() =>
+        {
+            job.PauseRequested = true;
+            if (_ctsMap.TryGetValue(job.Id, out var cts)) cts.Cancel();
+        });
     }
 
     /// <summary>把已经完成的任务卡片清掉。</summary>
@@ -173,46 +219,38 @@ public sealed class DownloadManager
         });
     }
 
+    /// <summary>有空槽就认领一个排队中的任务开跑，认领和标记 Running 在同一次 UI 线程投递里完成（多个泵并发也不会重复认领）。</summary>
     private async Task PumpAsync()
     {
-        if (_pumping) return;
-        _pumping = true;
-
-        try
+        while (true)
         {
-            while (true)
-            {
-                var job = await GetNextPendingAsync();
-                if (job is null) break;
+            var job = await ClaimNextAsync();
+            if (job is null) break;
 
-                _cts = new CancellationTokenSource();
-                await RunAsync(job, _cts.Token);
-            }
-        }
-        finally
-        {
-            _pumping = false;
-            Changed?.Invoke();
+            var cts = new CancellationTokenSource();
+            _ctsMap[job.Id] = cts;
+            _ = RunAsync(job, cts.Token);
         }
     }
 
-    private async Task<DownloadJob?> GetNextPendingAsync()
+    private Task<DownloadJob?> ClaimNextAsync()
     {
         var tcs = new TaskCompletionSource<DownloadJob?>();
         AppServices.Post(() =>
-            tcs.SetResult(Jobs.FirstOrDefault(j => j.Status == JobStatus.Pending)));
-        return await tcs.Task;
+        {
+            var running = Jobs.Count(j => j.Status == JobStatus.Running);
+            var job = running >= MaxConcurrent
+                ? null
+                : Jobs.FirstOrDefault(j => j.Status == JobStatus.Pending);
+            if (job is not null) job.Status = JobStatus.Running;
+            tcs.SetResult(job);
+        });
+        return tcs.Task;
     }
 
     private async Task RunAsync(DownloadJob job, CancellationToken ct)
     {
-        AppServices.Post(() =>
-        {
-            job.Status = JobStatus.Running;
-            job.ErrorMessage = null;
-            Changed?.Invoke();
-        });
-
+        var paused = false;
         try
         {
             if (job.Runner is null) throw new InvalidOperationException("任务没有可执行的内容。");
@@ -233,12 +271,22 @@ public sealed class DownloadManager
         }
         catch (OperationCanceledException)
         {
+            paused = job.PauseRequested;
             AppServices.Post(() =>
             {
-                job.Status = JobStatus.Cancelled;
-                job.ErrorMessage = "已取消";
+                job.PauseRequested = false;
+                // 卡住的步骤按暂停/取消收尾，别留着「进行中 x%」的假象
+                foreach (var step in job.Steps)
+                    if (step.Status == JobStatus.Running)
+                        step.Status = paused ? JobStatus.Paused : JobStatus.Cancelled;
+
+                job.ErrorMessage = paused ? "已暂停" : "已取消";
+                job.CurrentText = paused ? "已暂停" : "已取消";
+                job.Status = paused ? JobStatus.Paused : JobStatus.Cancelled;
                 Changed?.Invoke();
             });
+
+            _log.Info($"{job.Kind}{job.Title} {(paused ? "已暂停" : "已取消")}");
         }
         catch (Exception ex)
         {
@@ -253,6 +301,12 @@ public sealed class DownloadManager
 
             _log.Error($"{job.Kind}{job.Title} 安装失败：{ex}");
             _toast.Error($"{job.Title} 安装失败：{reason}");
+        }
+        finally
+        {
+            _ctsMap.Remove(job.Id);
+            // 空出来的槽位接着拉下一个任务
+            _ = PumpAsync();
         }
     }
 

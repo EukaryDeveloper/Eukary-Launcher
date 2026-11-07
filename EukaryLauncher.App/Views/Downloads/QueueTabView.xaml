@@ -42,19 +42,37 @@
                                 <StackPanel>
                                     <!-- 标题区 -->
                                     <Grid Margin="16,14,16,10">
-                                        <StackPanel>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
                                             <TextBlock Text="{Binding Title}" FontSize="{StaticResource FontSizeBase}"
                                                        FontWeight="SemiBold" Foreground="{DynamicResource Text1Brush}"/>
                                             <TextBlock Text="{Binding Subtitle}" Style="{StaticResource TextCaption}"
                                                        Margin="0,3,0,0"/>
                                         </StackPanel>
-                                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding StatusText}" Style="{StaticResource TextMuted}"
                                                        HorizontalAlignment="Right"/>
-                                            <TextBlock Text="点击卡片重新排队" Style="{StaticResource TextCaption}"
-                                                       HorizontalAlignment="Right" Margin="0,3,0,0"
-                                                       Foreground="{DynamicResource WarningBrush}"
-                                                       Visibility="{Binding CanRetry, Converter={StaticResource BoolToVisibility}}"/>
+                                            <!-- 暂停（进行中）/ 取消（排队中与进行中，带确认）/ 继续（暂停、失败、已取消） -->
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                                <Button Content="暂停" Style="{StaticResource SmallButton}"
+                                                        Margin="0,0,8,0" MinWidth="0"
+                                                        Command="{Binding DataContext.PauseCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Visibility="{Binding CanPause, Converter={StaticResource BoolToVisibility}}"/>
+                                                <Button Content="取消" Style="{StaticResource SmallButton}"
+                                                        Margin="0,0,8,0" MinWidth="0"
+                                                        Command="{Binding DataContext.CancelCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Visibility="{Binding CanCancel, Converter={StaticResource BoolToVisibility}}"/>
+                                                <Button Content="继续" Style="{StaticResource SmallButton}"
+                                                        MinWidth="0"
+                                                        Command="{Binding DataContext.RetryCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Visibility="{Binding CanRetry, Converter={StaticResource BoolToVisibility}}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
 

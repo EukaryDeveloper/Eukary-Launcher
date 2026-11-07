@@ -48,6 +48,29 @@ public sealed partial class QueueTabViewModel : ViewModelBase
         _queue.Retry(job);
     }
 
+    /// <summary>暂停进行中的任务（不需要确认，随时可以继续）。</summary>
+    [RelayCommand]
+    private void Pause(DownloadJob? job)
+    {
+        if (job is null) return;
+        _queue.Pause(job);
+    }
+
+    /// <summary>取消任务：弹模态确认，防误触把跑了半天的任务干掉。</summary>
+    [RelayCommand]
+    private void Cancel(DownloadJob? job)
+    {
+        if (job is null || !job.CanCancel) return;
+
+        AppServices.ShowModalConfirm?.Invoke(new ModalConfirmRequest(
+            "取消下载任务",
+            $"确定要取消「{job.Title}」吗？已经下载的内容会保留在磁盘上，之后可以重新排队接着装。",
+            "取消任务",
+            Destructive: true,
+            CountdownSeconds: 0,
+            OnConfirm: () => _queue.Cancel(job)));
+    }
+
     [RelayCommand]
     private void ClearFinished()
     {
