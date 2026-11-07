@@ -62,6 +62,13 @@ public partial class MainWindow : Window
         // 页面切换时播放 200ms 淡入
         _vm.PropertyChanged += OnViewModelPropertyChanged;
 
+        // 版本选择页：开页 / 关页（返回与切换共用一条回程动画）
+        AppServices.OpenVersionSelect = OpenVersionSelectUi;
+        _vm.VersionSelect.CloseRequested += () => Dispatcher.BeginInvoke(CloseVersionSelectUi);
+
+        // 模态确认对话框
+        AppServices.ShowModalConfirm = ShowConfirmModal;
+
         // 窗口启动：200ms 淡入 + Y 8→0
         if (AnimationHelper.IsEnabled)
         {
@@ -104,9 +111,158 @@ public partial class MainWindow : Window
         PageHost.BeginAnimation(OpacityProperty, fade);
     }
 
-    private void OnMinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    // ==================== 版本选择页：四向转场动画 ====================
+    // 打开：主侧栏向左撤出 / 主页按钮向右撤出 / 新侧栏从左拉入 / 版本列表从右拉入
+    // 关闭（返回与切换共用）：完全按原路线反向
 
-    private void OnMaximizeClick(object sender, RoutedEventArgs e) =>
+    private bool _versionSelectAnimating;
+
+    private void OpenVersionSelectUi()
+    {
+        if (VersionSelectOverlay.Visibility == Visibility.Visible || _versionSelectAnimating) return;
+
+        _vm.VersionSelect.RefreshFolders();
+        _versionSelectAnimating = true;
+        VersionSelectOverlay.Visibility = Visibility.Visible;
+
+        // 全部摆到打开前的起点
+        BeginSlide(MainSidebarTf, null, 0);
+        BeginSlide(PageHostTf, null, 0);
+        MainSidebarTf.X = 0;
+        PageHostTf.X = 0;
+        VersionSelectView.SnapClosed(MainSidebarWidth, PageSlideOffset);
+
+        SlideTo(MainSidebarTf, -MainSidebarWidth);
+        SlideTo(PageHostTf, PageSlideOffset);
+        SlideTo(VersionSelectView.SidebarTransform, 0);
+        SlideTo(VersionSelectView.ContentTransform, 0, onCompleted: () => _versionSelectAnimating = false);
+    }
+
+    private void CloseVersionSelectUi()
+    {
+        if (VersionSelectOverlay.Visibility != Visibility.Visible || _versionSelectAnimating) return;
+
+        _versionSelectAnimating = true;
+        SlideTo(MainSidebarTf, 0);
+        SlideTo(PageHostTf, 0);
+        SlideTo(VersionSelectView.SidebarTransform, -MainSidebarWidth);
+        SlideTo(VersionSelectView.ContentTransform, PageSlideOffset, onCompleted: () =>
+        {
+            VersionSelectOverlay.Visibility = Visibility.Collapsed;
+            _versionSelectAnimating = false;
+        });
+    }
+
+    private const double MainSidebarWidth = 180;
+    private const double PageSlideOffset = 320;
+
+    /// <summary>X 平滑动画；无动画环境（系统关动效）直接落到终点。</summary>
+    private void SlideTo(TranslateTransform tf, double to, Action? onCompleted = null)
+    {
+        if (!AnimationHelper.IsEnabled)
+        {
+            tf.X = to;
+            onCompleted?.Invoke();
+            return;
+        }
+
+        var anim = new DoubleAnimation(to, new Duration(TimeSpan.FromMilliseconds(280)))
+        {
+            // CubicBezierEase 的默认控制点就是设计图纸的 cubic-bezier(0.2, 0.8, 0.2, 1)
+            EasingFunction = new Animation.CubicBezierEase(),
+        };
+        if (onCompleted is not null)
+            anim.Completed += (_, _) => onCompleted();
+        tf.BeginAnimation(TranslateTransform.XProperty, anim);
+    }
+
+    /// <summary>停掉正在进行的动画并直接落位（SnapXxx 之前调用）。</summary>
+    private static void BeginSlide(TranslateTransform tf, double? x, double fallback)
+    {
+        tf.BeginAnimation(TranslateTransform.XProperty, null);
+        tf.X = x ?? fallback;
+    }
+
+    // ==================== 通用模态确认对话框 ====================
+
+    private ModalConfirmRequest? _confirmRequest;
+    private System.Windows.Threading.DispatcherTimer? _confirmCountdownTimer;
+    private int _confirmSecondsLeft;
+
+    private void ShowConfirmModal(ModalConfirmRequest request)
+    {
+        _confirmRequest = request;
+        ConfirmTitle.Text = request.Title;
+        ConfirmMessage.Text = request.Message;
+        ConfirmActionButton.Style = (Style)FindResource(request.Destructive ? "DangerButton" : "PrimaryButton");
+        ConfirmHost.Visibility = Visibility.Visible;
+        ConfirmHost.BeginAnimation(OpacityProperty, null);
+
+        if (AnimationHelper.IsEnabled)
+        {
+            var fade = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(160)))
+            {
+                EasingFunction = new Animation.CubicBezierEase(),
+            };
+            ConfirmHost.BeginAnimation(OpacityProperty, fade);
+        }
+
+        StartConfirmCountdown(request);
+    }
+
+    private void StartConfirmCountdown(ModalConfirmRequest request)
+    {
+        _confirmCountdownTimer?.Stop();
+        _confirmCountdownTimer = null;
+        _confirmSecondsLeft = request.CountdownSeconds;
+        UpdateConfirmButton();
+
+        if (_confirmSecondsLeft <= 0)
+        {
+            ConfirmActionButton.IsEnabled = true;
+            return;
+        }
+
+        ConfirmActionButton.IsEnabled = false;
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += (_, _) =>
+        {
+            _confirmSecondsLeft--;
+            UpdateConfirmButton();
+            if (_confirmSecondsLeft <= 0)
+            {
+                timer.Stop();
+                ConfirmActionButton.IsEnabled = true;
+            }
+        };
+        _confirmCountdownTimer = timer;
+        timer.Start();
+    }
+
+    private void UpdateConfirmButton()
+    {
+        var text = _confirmRequest?.ConfirmText ?? "确认";
+        ConfirmActionButton.Content = _confirmSecondsLeft > 0 ? $"{text}（{_confirmSecondsLeft}）" : text;
+    }
+
+    private void OnConfirmActionClick(object sender, RoutedEventArgs e)
+    {
+        var request = _confirmRequest;
+        HideConfirmModal();
+        request?.OnConfirm();
+    }
+
+    private void OnConfirmCancelClick(object sender, RoutedEventArgs e) => HideConfirmModal();
+
+    private void HideConfirmModal()
+    {
+        _confirmCountdownTimer?.Stop();
+        _confirmCountdownTimer = null;
+        _confirmRequest = null;
+        ConfirmHost.Visibility = Visibility.Collapsed;
+    }
+
+    private void OnMinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;    private void OnMaximizeClick(object sender, RoutedEventArgs e) =>
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
 
     private void OnCloseClick(object sender, RoutedEventArgs e) => Close();

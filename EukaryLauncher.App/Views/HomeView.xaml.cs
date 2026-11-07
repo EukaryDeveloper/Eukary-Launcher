@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using EukaryLauncher.App.Services;
 
 namespace EukaryLauncher.App.Views;
 
@@ -12,11 +13,7 @@ public partial class HomeView : UserControl
 
     private void OnVersionSelectClick(object sender, RoutedEventArgs e)
     {
-        VersionSelectPopup.IsOpen = true;
-    }
-
-    private void OnVersionListSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        VersionSelectPopup.IsOpen = false;
+        // MainWindow 打开版本选择覆盖层（四向转场动画）
+        AppServices.OpenVersionSelect?.Invoke();
     }
 }

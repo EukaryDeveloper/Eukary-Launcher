@@ -26,6 +26,20 @@ public sealed class LauncherSettings
     public int WindowHeight { get; set; } = 480;
     public bool UseCustomResolution { get; set; } = false;
     public string? ExtraJvmArgs { get; set; }
+
+    /// <summary>默认文件夹的显示名称（版本选择页可改，不动磁盘路径）。</summary>
+    public string DefaultFolderName { get; set; } = "默认文件夹";
+
+    /// <summary>额外的游戏文件夹（版本选择页多文件夹支持；默认文件夹不在此列）。</summary>
+    public List<ExtraGameFolder> ExtraFolders { get; set; } = new();
+}
+
+/// <summary>版本选择页「文件夹列表」里的一个额外游戏文件夹。</summary>
+public sealed class ExtraGameFolder
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string DisplayName { get; set; } = "";
+    public string Path { get; set; } = "";
 }
 
 public sealed class SettingsService

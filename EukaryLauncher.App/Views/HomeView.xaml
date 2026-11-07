@@ -30,53 +30,5 @@
                     IsEnabled="{Binding CanLaunch}"/>
         </StackPanel>
 
-        <!-- 版本选择弹层 -->
-        <Popup x:Name="VersionSelectPopup"
-               PlacementTarget="{Binding ElementName=VersionSelectButton}"
-               Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
-            <Border Background="{DynamicResource BgElevatedBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                    CornerRadius="{StaticResource RadiusSm}" Margin="0,4,0,0"
-                    Width="240" MaxHeight="420" Padding="4">
-                <ListBox x:Name="VersionList"
-                         ItemsSource="{Binding InstalledVersions}"
-                         SelectedItem="{Binding SelectedVersionId, Mode=TwoWay}"
-                         Background="Transparent" BorderThickness="0"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         SelectionChanged="OnVersionListSelectionChanged">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
-                            <Setter Property="Padding" Value="10,7"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border x:Name="Bd" Background="Transparent"
-                                                CornerRadius="{StaticResource RadiusSm}"
-                                                Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background"
-                                                        Value="{DynamicResource BgHoverBrush}"/>
-                                            </Trigger>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="Bd" Property="Background"
-                                                        Value="{DynamicResource BgHoverBrush}"/>
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AccentBrush}"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                </ListBox>
-            </Border>
-        </Popup>
     </Grid>
 </UserControl>

@@ -3,13 +3,21 @@ using EukaryLauncher.Core.Models;
 
 namespace EukaryLauncher.App.Services;
 
+/// <summary>模态确认请求。CountdownSeconds &gt; 0 时确认按钮禁用 N 秒后才可点击。</summary>
+public sealed record ModalConfirmRequest(
+    string Title,
+    string Message,
+    string ConfirmText,
+    bool Destructive,
+    int CountdownSeconds,
+    Action OnConfirm);
+
 /// <summary>
 /// 极简的服务定位器。没有引入 DI 容器——目前只有几个单例，
 /// 等 M8 做插件系统时再换成 Microsoft.Extensions.DependencyInjection 也不迟。
 /// </summary>
 public static class AppServices
-{
-    public static SettingsService Settings { get; private set; } = null!;
+{    public static SettingsService Settings { get; private set; } = null!;
     public static GameContext Context { get; private set; } = null!;
     public static ToastService Toasts { get; } = new();
     public static DownloadManager Queue { get; private set; } = null!;
@@ -34,6 +42,12 @@ public static class AppServices
 
     /// <summary>启动游戏后自动跳到日志页。</summary>
     public static Action? NavigateToConsole { get; set; }
+
+    /// <summary>主页「版本选择」按钮 → MainWindow 打开版本选择页（带四向转场动画）。</summary>
+    public static Action? OpenVersionSelect { get; set; }
+
+    /// <summary>弹出模态确认对话框（MainWindow 实现）。CountdownSeconds &gt; 0 时确认按钮要倒计时后才能点。</summary>
+    public static Action<ModalConfirmRequest>? ShowModalConfirm { get; set; }
 
     /// <summary>游戏启动后按设置调整主窗口（隐藏 / 最小化 / 关闭），由 MainWindow 实现。</summary>
     public static Action<LauncherVisibility>? ApplyLauncherVisibility { get; set; }

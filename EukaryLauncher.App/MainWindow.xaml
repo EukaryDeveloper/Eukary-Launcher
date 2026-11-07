@@ -158,6 +158,9 @@
                 <!-- 侧边栏 -->
                 <Border Grid.Column="0" Background="{DynamicResource BgElevatedBrush}"
                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="MainSidebarTf"/>
+                    </Border.RenderTransform>
                     <Grid Margin="10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
@@ -187,7 +190,46 @@
                 <!-- 页面 -->
                 <ContentControl Grid.Column="1" x:Name="PageHost"
                                 Content="{Binding CurrentViewModel}"
-                                Focusable="False"/>
+                                Focusable="False">
+                    <ContentControl.RenderTransform>
+                        <TranslateTransform x:Name="PageHostTf"/>
+                    </ContentControl.RenderTransform>
+                </ContentControl>
+            </Grid>
+
+            <!-- ===================== 版本选择覆盖层 =====================
+                 全窗覆盖（标题栏以下），进出动画由 MainWindow 编排：
+                 主侧栏左出 / 主页按钮右出 / 新侧栏左入 / 版本列表右入 -->
+            <Grid x:Name="VersionSelectOverlay" Grid.Row="1"
+                  Background="{DynamicResource BgBaseBrush}" Visibility="Collapsed">
+                <views:VersionSelectView x:Name="VersionSelectView"
+                                         DataContext="{Binding VersionSelect}"/>
+            </Grid>
+
+            <!-- ===================== 通用模态确认弹窗 ===================== -->
+            <Grid x:Name="ConfirmHost" Grid.Row="0" Grid.RowSpan="2"
+                  Background="{StaticResource ScrimBrush}" Visibility="Collapsed">
+                <Border Background="{StaticResource BgElevatedBrush}"
+                        BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusLg}" Padding="24"
+                        Width="460" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        SnapsToDevicePixels="True">
+                    <StackPanel>
+                        <TextBlock x:Name="ConfirmTitle" FontSize="{StaticResource FontSizeLg}"
+                                   FontWeight="SemiBold" Foreground="{StaticResource Text1Brush}"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock x:Name="ConfirmMessage" Style="{StaticResource TextBody}"
+                                   Foreground="{StaticResource Text2Brush}" Margin="0,12,0,0"
+                                   TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                            <Button Content="取消" Style="{StaticResource SecondaryButton}"
+                                    Click="OnConfirmCancelClick"/>
+                            <Button x:Name="ConfirmActionButton" Style="{StaticResource PrimaryButton}"
+                                    Margin="8,0,0,0" MinWidth="96"
+                                    Click="OnConfirmActionClick"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <!-- 通知浮层：不拦截鼠标事件，避免挡住下面的操作。

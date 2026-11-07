@@ -26,6 +26,7 @@ public sealed partial class MainViewModel : ObservableObject
         Console = new ConsoleViewModel();
         Settings = new SettingsViewModel(_settings);
         About = new AboutViewModel();
+        VersionSelect = new VersionSelectViewModel(_settings, Home);
         CurrentViewModel = Home;
         _ = Home.OnNavigatedAsync();
     }
@@ -35,6 +36,7 @@ public sealed partial class MainViewModel : ObservableObject
     public ConsoleViewModel Console { get; }
     public SettingsViewModel Settings { get; }
     public AboutViewModel About { get; }
+    public VersionSelectViewModel VersionSelect { get; }
 
     [ObservableProperty]
     private NavPage currentPage = NavPage.Home;
