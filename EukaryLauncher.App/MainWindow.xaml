@@ -39,7 +39,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Toast：左下角堆叠，左侧竖条按类型着色。
+        <!-- Toast：右下角堆叠，左侧竖条按类型着色。
              注意不能加 BitmapEffect（如 DropShadowEffect）——切页重绘时带效果的区域
              会被渲染线程跳过，Toast 会“消失”但视觉树一切正常（脏区域 bug，2026-11-06 实测） -->
         <DataTemplate DataType="{x:Type svc:ToastItem}">
@@ -55,24 +55,25 @@
                         <ColumnDefinition Width="3"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Rectangle Grid.Column="0" Margin="0">
-                        <Rectangle.Style>
-                            <Style TargetType="Rectangle">
-                                <Setter Property="Fill" Value="{StaticResource InfoBrush}"/>
+                    <!-- 颜色条在框的内侧：左侧两角按内层圆角裁掉，不溢出外框圆角 -->
+                    <Border Grid.Column="0" Background="{StaticResource InfoBrush}"
+                            CornerRadius="{StaticResource RadiusMdLeftInner}">
+                        <Border.Style>
+                            <Style TargetType="Border">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Kind}" Value="Success">
-                                        <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                        <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Kind}" Value="Warning">
-                                        <Setter Property="Fill" Value="{StaticResource WarningBrush}"/>
+                                        <Setter Property="Background" Value="{StaticResource WarningBrush}"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Kind}" Value="Error">
-                                        <Setter Property="Fill" Value="{StaticResource DangerBrush}"/>
+                                        <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Rectangle.Style>
-                    </Rectangle>
+                        </Border.Style>
+                    </Border>
                     <TextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap"
                                FontSize="{StaticResource FontSizeSm}"
                                Foreground="{DynamicResource Text1Brush}"
