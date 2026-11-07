@@ -173,17 +173,20 @@ public sealed class DownloadManager
         _ = PumpAsync();
     }
 
-    /// <summary>取消任务。排队中的直接标记；进行中的触发取消令牌，Runner 会以 OperationCanceledException 收场。</summary>
+    /// <summary>
+    /// 取消任务。排队中的直接移除；进行中的触发取消令牌，
+    /// Runner 以 OperationCanceledException 收场后再移除卡片并弹通知。
+    /// </summary>
     public void Cancel(DownloadJob job)
     {
         if (job.Status == JobStatus.Pending)
         {
             AppServices.Post(() =>
             {
-                job.ErrorMessage = "已取消";
-                job.Status = JobStatus.Cancelled;
+                Jobs.Remove(job);
                 Changed?.Invoke();
             });
+            _toast.Info($"已取消「{job.Title}」");
             return;
         }
         if (job.Status != JobStatus.Running) return;
@@ -280,13 +283,27 @@ public sealed class DownloadManager
                     if (step.Status == JobStatus.Running)
                         step.Status = paused ? JobStatus.Paused : JobStatus.Cancelled;
 
-                job.ErrorMessage = paused ? "已暂停" : "已取消";
-                job.CurrentText = paused ? "已暂停" : "已取消";
-                job.Status = paused ? JobStatus.Paused : JobStatus.Cancelled;
+                if (paused)
+                {
+                    job.ErrorMessage = "已暂停";
+                    job.CurrentText = "已暂停";
+                    job.Status = JobStatus.Paused;
+                }
+                else
+                {
+                    // 取消即出队，卡片不再保留
+                    Jobs.Remove(job);
+                }
                 Changed?.Invoke();
             });
 
-            _log.Info($"{job.Kind}{job.Title} {(paused ? "已暂停" : "已取消")}");
+            if (paused)
+                _log.Info($"{job.Kind}{job.Title} 已暂停");
+            else
+            {
+                _log.Info($"{job.Kind}{job.Title} 已取消");
+                _toast.Info($"已取消「{job.Title}」");
+            }
         }
         catch (Exception ex)
         {
