@@ -137,17 +137,18 @@ public partial class MainWindow : Window
         VersionSelectOverlay.Visibility = Visibility.Visible;
 
         // ① 覆盖层与旧页面交叉淡化：新页面不是"啪"地盖上来，而是慢慢浮出
-        FadeTo(VersionSelectOverlay, 0, 1, 260);
+        FadeTo(VersionSelectOverlay, 0, 1, 300);
 
         // ② 旧页面退场：侧栏完全滑出，页面只退一小段并淡出（视差 + 淡化，不硬推整屏）
-        SlideTo(MainSidebarTf, -MainSidebarWidth, 340);
-        FadeTo(MainSidebar, 1, 0, 220);
-        SlideTo(PageHostTf, PageSlideOffset, 380);
+        SlideTo(MainSidebarTf, -MainSidebarWidth, OpenMs);
+        FadeTo(MainSidebar, 1, 0, 240);
+        SlideTo(PageHostTf, PageSlideOffset, OpenMs);
         FadeTo(PageHost, 1, 0, 240);
 
-        // ③ 新页面进场：侧栏先到，信息流晚 70ms 跟上，形成层叠感
-        SlideTo(VersionSelectView.SidebarTransform, 0, 340, onCompleted: () => _versionSelectAnimating = false);
-        SlideTo(VersionSelectView.ContentTransform, 0, 400, delayMs: 70);
+        // ③ 新页面进场：侧栏与信息流同起同止，不做错峰（错峰看着像两块各走各的）
+        SlideTo(VersionSelectView.SidebarTransform, 0, OpenMs,
+                onCompleted: () => _versionSelectAnimating = false);
+        SlideTo(VersionSelectView.ContentTransform, 0, OpenMs);
     }
 
     private void CloseVersionSelectUi()
@@ -156,10 +157,10 @@ public partial class MainWindow : Window
 
         _versionSelectAnimating = true;
 
-        // 新页面先退（反向），旧页面稍晚淡回，避免两块内容同起同落
-        SlideTo(VersionSelectView.SidebarTransform, -MainSidebarWidth, 320);
-        SlideTo(VersionSelectView.ContentTransform, PageSlideOffset, 340);
-        FadeTo(VersionSelectOverlay, 1, 0, 300, delayMs: 60, onCompleted: () =>
+        // 全程对称回退：新页面滑出、覆盖层淡出、旧页面淡回，三者同起同止
+        SlideTo(VersionSelectView.SidebarTransform, -MainSidebarWidth, CloseMs);
+        SlideTo(VersionSelectView.ContentTransform, PageSlideOffset, CloseMs);
+        FadeTo(VersionSelectOverlay, 1, 0, CloseMs, onCompleted: () =>
         {
             VersionSelectOverlay.Visibility = Visibility.Collapsed;
             VersionSelectOverlay.BeginAnimation(OpacityProperty, null);
@@ -167,24 +168,28 @@ public partial class MainWindow : Window
             _versionSelectAnimating = false;
         });
 
-        SlideTo(MainSidebarTf, 0, 380, delayMs: 40);
-        FadeTo(MainSidebar, 0, 1, 280, delayMs: 40);
-        SlideTo(PageHostTf, 0, 380, delayMs: 40);
+        SlideTo(MainSidebarTf, 0, CloseMs);
+        FadeTo(MainSidebar, 0, 1, 280);
+        SlideTo(PageHostTf, 0, CloseMs);
         FadeTo(PageHost, 0, 1, 280, delayMs: 40);
     }
 
     private const double MainSidebarWidth = 180;
 
+    /// <summary>开页 / 关页总时长。侧栏与信息流共用同一个值，保证同起同止。</summary>
+    private const int OpenMs = 360;
+    private const int CloseMs = 340;
+
     /// <summary>旧页面退场位移。只退一小段再淡出，比把整屏推出窗口柔和得多。</summary>
     private const double PageSlideOffset = 220;
 
     /// <summary>
-    /// 页面级转场的缓动：cubic-bezier(0.32, 0.72, 0, 1)。
-    /// 比全站通用的 (0.2, 0.8, 0.2, 1) 起步更缓、收尾拖得更长，大面积位移才不显得急。
+    /// 页面级转场的缓动：cubic-bezier(0.2, 0, 0, 1)（Material「强调」曲线）。
+    /// 起步柔和、中段有力、收尾绵长，大面积位移才不显得急。
     /// </summary>
     private static System.Windows.Media.Animation.EasingFunctionBase PageEase => new Animation.CubicBezierEase
     {
-        ControlPoint1 = new Point(0.32, 0.72),
+        ControlPoint1 = new Point(0.2, 0),
         ControlPoint2 = new Point(0, 1),
     };
 

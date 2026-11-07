@@ -6,6 +6,9 @@ namespace EukaryLauncher.App.Animation;
 /// <summary>
 /// 设计图纸规定全站统一使用 cubic-bezier(0.2, 0.8, 0.2, 1)。
 /// WPF 内置缓动函数没有这条曲线，这里自己实现一个，保证和图纸一致。
+/// 注意：必须显式设为 EaseIn——EasingFunctionBase 默认的 EaseOut 会把曲线按时间反演
+/// （实际表现成"慢起急停"，与 CSS 的贝塞尔语义正好相反），EaseIn 才是
+/// 直接把归一化时间喂给贝塞尔求进度。
 /// </summary>
 public sealed class CubicBezierEase : EasingFunctionBase
 {
@@ -16,6 +19,11 @@ public sealed class CubicBezierEase : EasingFunctionBase
     public static readonly DependencyProperty ControlPoint2Property =
         DependencyProperty.Register(nameof(ControlPoint2), typeof(Point), typeof(CubicBezierEase),
             new PropertyMetadata(new Point(0.2, 1.0)));
+
+    public CubicBezierEase()
+    {
+        EasingMode = EasingMode.EaseIn;
+    }
 
     public Point ControlPoint1
     {
