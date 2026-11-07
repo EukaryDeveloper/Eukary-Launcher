@@ -87,6 +87,13 @@ public sealed partial class DownloadsViewModel : ViewModelBase
         SelectedTabIndex = index;
     }
 
+    /// <summary>从别处跳进下载页时用：落到「原版游戏」这一层，而不是上次停留的 tab 或子页。</summary>
+    public void OpenVanillaTab()
+    {
+        LoaderSelect = null;
+        SelectedTabIndex = 0;
+    }
+
     private async void OnContinueRequested(AvailableVersionRow row)
     {
         var loader = new LoaderSelectViewModel();
