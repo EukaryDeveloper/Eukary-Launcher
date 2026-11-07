@@ -29,8 +29,9 @@ def click_nav(w, title):
 
 
 def main():
+    exe = sys.argv[1] if len(sys.argv) > 1 else EXE
     os.makedirs(OUT, exist_ok=True)
-    w = Walker(EXE, OUT)
+    w = Walker(exe, OUT)
     w.start()
     try:
         time.sleep(1)
