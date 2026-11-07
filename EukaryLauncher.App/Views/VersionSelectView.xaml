@@ -165,8 +165,9 @@
                     <!-- ============ 版本列表 ============ -->
                     <TextBlock Text="版本列表" Style="{StaticResource SettingsSectionTitle}"/>
                     <Border Style="{StaticResource SettingsGroup}" Margin="0,0,0,24">
-                        <ItemsControl ItemsSource="{Binding Versions}">
-                            <ItemsControl.ItemTemplate>
+                        <Grid>
+                            <ItemsControl ItemsSource="{Binding Versions}">
+                                <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <ContentControl>
                                         <ContentControl.Style>
@@ -216,8 +217,22 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <!-- 文件夹下没有任何版本：引导去下载页 -->
+                        <StackPanel HorizontalAlignment="Center" Margin="0,8"
+                                    Visibility="{Binding VersionsEmpty, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="该文件夹下没有 Minecraft，快去下载吧~"
+                                       Style="{StaticResource TextBody}"
+                                       Foreground="{DynamicResource Text2Brush}"
+                                       HorizontalAlignment="Center"/>
+                            <Button Content="下载 Minecraft" Style="{StaticResource SecondaryButton}"
+                                    HorizontalAlignment="Center" Margin="0,14,0,0"
+                                    MinWidth="140" Command="{Binding GoDownloadCommand}"/>
+                        </StackPanel>
+                        </Grid>
                     </Border>
 
+                    <!-- ============ 移除文件夹（默认文件夹没有这一栏） ============ -->
                     <!-- ============ 移除文件夹（默认文件夹没有这一栏） ============ -->
                     <StackPanel Visibility="{Binding CanRemoveFolder, Converter={StaticResource BoolToVisibility}}">
                         <TextBlock Text="移除文件夹" Style="{StaticResource SettingsSectionTitle}"/>

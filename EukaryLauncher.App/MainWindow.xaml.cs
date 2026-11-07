@@ -67,6 +67,13 @@ public partial class MainWindow : Window
         AppServices.OpenVersionSelect = OpenVersionSelectUi;
         _vm.VersionSelect.CloseRequested += () => Dispatcher.BeginInvoke(CloseVersionSelectUi);
 
+        // 版本选择页里点了「下载 Minecraft」：切到下载页，覆盖层随之下收
+        _vm.VersionSelect.GoDownloadRequested += () => Dispatcher.BeginInvoke(() =>
+        {
+            _vm.CurrentPage = NavPage.Download;
+            CloseVersionSelectUi();
+        });
+
         // 模态确认对话框
         AppServices.ShowModalConfirm = ShowConfirmModal;
 

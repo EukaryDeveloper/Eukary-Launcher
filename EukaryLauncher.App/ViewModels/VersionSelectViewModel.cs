@@ -67,6 +67,10 @@ public sealed partial class VersionSelectViewModel : ViewModelBase
 
     public ObservableCollection<FolderVersionRow> Versions { get; } = new();
 
+    /// <summary>版本列表为空时显示「去下载」的引导（扫描中不显示，避免闪一下）。</summary>
+    [ObservableProperty]
+    private bool versionsEmpty;
+
     /// <summary>非默认文件夹才显示「移除文件夹」栏目。</summary>
     [ObservableProperty]
     private bool canRemoveFolder;
@@ -75,6 +79,9 @@ public sealed partial class VersionSelectViewModel : ViewModelBase
     public event Action? CloseRequested;
 
     private void Close() => CloseRequested?.Invoke();
+
+    /// <summary>点了「下载 Minecraft」：主窗口先收起覆盖层再切到下载页。</summary>
+    public event Action? GoDownloadRequested;
 
     partial void OnSelectedFolderChanged(GameFolderItem? value)
     {
@@ -98,6 +105,7 @@ public sealed partial class VersionSelectViewModel : ViewModelBase
     private void LoadVersions()
     {
         Versions.Clear();
+        VersionsEmpty = false;
         var folder = SelectedFolder;
         if (folder is null) return;
 
@@ -116,6 +124,7 @@ public sealed partial class VersionSelectViewModel : ViewModelBase
                 foreach (var info in t.Result)
                     Versions.Add(new FolderVersionRow(info, _home.SelectedVersionId ?? ""));
                 UpdateRowFlags();
+                VersionsEmpty = Versions.Count == 0;
             });
         });
     }
@@ -192,6 +201,9 @@ public sealed partial class VersionSelectViewModel : ViewModelBase
     [RelayCommand]
     private void ImportOrExport() =>
         AppServices.Toasts.Info("「导入或导出」正在开发中");
+
+    [RelayCommand]
+    private void GoDownload() => GoDownloadRequested?.Invoke();
 
     [RelayCommand]
     private void RemoveFolder()
