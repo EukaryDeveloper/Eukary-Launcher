@@ -120,11 +120,6 @@
                     </Grid>
                     <TextBlock Text="真核启动器" FontSize="{StaticResource FontSizeSm}"
                                Foreground="{DynamicResource Text1Brush}" FontWeight="SemiBold"/>
-                    <TextBlock Text="—" Margin="8,0" Foreground="{DynamicResource Text3Brush}"
-                               FontSize="{StaticResource FontSizeSm}"/>
-                    <TextBlock Text="{Binding Home.SelectedVersionId, TargetNullValue='未选择版本'}"
-                               FontSize="{StaticResource FontSizeSm}"
-                               Foreground="{DynamicResource Text3Brush}"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
