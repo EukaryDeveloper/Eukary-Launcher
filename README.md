@@ -13,44 +13,67 @@
 
 ![主界面](docs/screenshot-main.png)
 
+![下载中心](docs/screenshot-downloads.png)
+
 ---
 
 ## 下载与安装
 
-从 [Releases](https://github.com/EukaryDeveloper/Eukary-Launcher/releases) 下载安装包双击安装即可；
-也可以拉下源码自己跑（见下方「构建与运行」）。
+从 [Releases](https://github.com/EukaryDeveloper/Eukary-Launcher/releases) 下载最新的
+`EukaryLauncher-x.y.z-Setup.exe`，双击安装即可。
 
 - 安装包自包含单文件，**不需要预先安装 .NET 运行时**
 - 按用户安装到 `%LOCALAPPDATA%\Programs\Eukary Launcher`，**不需要管理员权限**
 - 卸载从开始菜单或「应用和功能」，已下载的游戏文件和 Java 运行时可选择保留
+- 系统要求：Windows 10 1607 及以上、64 位
 
 ---
 
-## 当前进度：M1 最小可用启动器 ✅ · M3 下载中心（进行中）
+## 功能总览
 
-### M1 ✅
+### 游戏安装与启动
 
-| M1 验收项 | 状态 |
-|---|---|
-| 拉版本清单，列出所有 release 版本 | ✅ |
-| 选一个版本，完整下载 libraries + assets + jar | ✅ |
-| 离线输入用户名，拼命令行，启动游戏 | ✅ |
-| 界面实时显示游戏日志 | ✅ |
-| **验收标准：点一下就能玩上原版 1.20.4** | ✅ 已由 `ekl-smoke --launch 1.20.4` 端到端验证 |
+- 支持安装 Mojang 官方全部版本：正式版、快照、远古 alpha / beta 都能下载游玩
+- Fabric / Forge / NeoForge / OptiFine 四种模组加载器，能共存的可以组合安装
+- 内置 Modrinth 模组搜索与安装，可按游戏版本和加载器筛选，安装前自动校验兼容性
+- 远古版本（1.1 等）同样能装能玩
+- Java 全自动：缺哪个版本就自动下载哪个，不需要手动安装 Java
+- 输入用户名即可离线游玩单机
 
-实测数据（本机 Windows 10 + BMCLAPI 镜像）：
-- libraries 64 个、assets 3788 个唯一哈希（626 MB）、主 jar 24.4 MB，全部 SHA1 校验通过
-- Java 17 JRE 由 Adoptium 自动下载并解压到 `runtime/java-17/`
-- 游戏进程真实启动到主菜单，日志无 `ClassNotFoundException` / `NoClassDefFoundError` / `no lwjgl in java.library.path`
-- 离线模式下出现 `InvalidCredentialsException: 401` 属预期（假 token 无法取正版 user properties），不影响单机游玩
+### 下载管理
 
-### M3 下载中心（v0.2.0，进行中）
+- 多任务并发下载，支持暂停、继续、取消和失败重试
+- 默认使用国内镜像（BMCLAPI），失败自动回退官方源；支持断点续传
+- 下载完成、出错都有通知提醒
 
-- 「下载」页 Top Tabs：原版游戏 / 模组 / 整合包 / 数据包 / 资源包 / 光影包 / 下载队列（后四类为占位）
-- 原版游戏点「继续」→ 模组加载器选择（Forge / NeoForge / Fabric / OptiFine，互斥联动），确认后才入队
-- **Fabric Loader 自动安装已可用**：meta.fabricmc.net 拉取 profile → 依赖库下载 → 继承原版主 jar，已实测真实启动
-- 模组：Modrinth 搜索（按名称 / 游戏版本 / 加载器筛选），版本页按加载器 × 游戏版本分组，安装前校验游戏版本与加载器
-- 统一串行下载队列：分步进度、失败保留可重试、完成销毁并 Toast 通知
+### 版本管理
+
+- 多游戏文件夹，文件夹可自定义显示名
+- 版本隔离：每个版本有独立的存档、资源包与配置目录，互不干扰（五档策略可调，默认隔离所有版本）
+- 版本选择页集中管理已装版本：切换、删除、文件夹改名，空文件夹会引导去下载
+
+### 界面
+
+- 主页一键开始游戏，当前选择的版本与加载器直接显示在按钮上
+- 实时滚动显示游戏日志
+- 全站统一的流畅动效与信息流布局
+
+---
+
+## 里程碑进度
+
+| 里程碑 | 内容 | 状态 |
+|---|---|---|
+| M1 | 最小可用：装原版、启动、看日志 | ✅ v0.1.0 |
+| M2 | 微软正版登录 | 🚧 进行中（当前阶段） |
+| M3 | 下载中心：原版 / 加载器 / 模组 / 队列 | 🟡 主体功能已可用 |
+| M4 | 整合包导入与安装 | ⬜ 占位标签 |
+| M5 | Forge / NeoForge / OptiFine 安装、Java 自动下载 | ✅ |
+| M6 | 主题 | ⬜ |
+| M7 | 发布：自动更新、崩溃报告 | ⬜ |
+| M8 | 插件系统 | ⬜ |
+
+> 当前只有离线登录可用，微软正版登录尚未接入，因此项目仍处在 M2。
 
 ---
 
@@ -58,12 +81,12 @@
 
 | 项 | 选择 | 理由 |
 |---|---|---|
-| UI 框架 | **WPF** | 只服务 Windows（最低 Win10），生态最成熟，PCL2 同款路线 |
-| 运行时 | **.NET 8 (LTS)** | 自包含单文件发布，用户不用装 .NET |
+| UI 框架 | **WPF** | 只服务 Windows（最低 Win10），桌面生态最成熟 |
+| 运行时 | **.NET 8 (LTS)** | 长期支持版本，自包含单文件发布，用户不用装 .NET |
 | MVVM | CommunityToolkit.Mvvm | 微软官方源生成器，代码量少 |
 | JSON | System.Text.Json | 官方，性能好 |
-| 日志 | 自研 `LogService` | 现阶段不需要 Serilog 的结构化能力，避免多余依赖 |
-| 协议 | GPL-3.0 | 与 PCL2 / HMCL 一致，启动器圈事实标准 |
+| 日志 | 自研 `LogService` | 轻量够用，避免多余依赖 |
+| 协议 | GPL-3.0 | 开源 Minecraft 启动器的通行选择 |
 
 **最低系统要求**：Windows 10 1607+（.NET 8 Windows 桌面运行时要求）。
 
@@ -74,23 +97,30 @@
 ```
 EukaryLauncher.sln
 ├── EukaryLauncher.Core/       ← 类库，零 UI 依赖，可单独做单元测试
-│   ├── Models/                ← 版本清单 / 版本 JSON / 启动参数 DTO
-│   │                             （含 arguments 多态 JSON 转换器、离线 UUID）
+│   ├── Models/                ← 版本清单 / 版本 JSON / 启动参数 / Modrinth / 隔离策略
 │   └── Services/
 │       ├── VersionInstaller   ← 下载 libraries/assets/jar、解压 natives、继承合并
 │       ├── VersionMerger      ← inheritsFrom 深度合并
 │       ├── RuleEvaluator      ← rules 求值（os / arch / features）
-│       ├── DownloadService    ← 多线程 + SHA1 校验 + 重试 + 断点续传
+│       ├── DownloadService    ← 多线程 + SHA1 校验 + 重试 + 断点续传 + 备源回退
 │       ├── MirrorService      ← 官方源 / BMCLAPI 可切换
-│       ├── JavaManager        ← Adoptium API 自动下载 JRE
+│       ├── JavaManager        ← Adoptium API 自动下载 JRE、本机 Java 枚举与版本匹配
+│       ├── LoaderService      ← 加载器识别、加载器版本列表、Fabric profile 拉取
+│       ├── LoaderMetaService  ← Forge / NeoForge / OptiFine 版本列表与安装器地址
+│       ├── OptiFinePatcher    ← 调 optifine.Patcher 产出库
+│       ├── ProcessRunner      ← 流式读取安装器输出
+│       ├── FolderVersionScanner ← 扫描 versions/ 得到本体版本 + 加载器文本
+│       ├── LegacyCompat       ← 老版本 options.txt 兼容处理
 │       ├── ArgumentBuilder    ← JVM / 游戏参数拼接
-│       └── GameLauncher       ← 进程启动与日志转发
+│       └── GameLauncher       ← 进程启动、日志转发、等待游戏窗口出现
 ├── EukaryLauncher.App/        ← WPF UI 层
 │   ├── Themes/Tokens.xaml     ← 设计令牌（唯一真源）
 │   ├── Themes/Controls.xaml   ← 全部控件样式
-│   ├── Animation/             ← cubic-bezier(0.2,0.8,0.2,1) 缓动实现
-│   ├── Views/  ViewModels/  Services/  Converters/
-├── EukaryLauncher.Smoke/      ← 冒烟测试（纯逻辑断言 + 端到端下载/启动）
+│   ├── Animation/             ← 缓动实现
+│   ├── Services/              ← 下载队列、下载任务、设置、通知、模组索引、隔离旗标
+│   ├── Views/  ViewModels/
+├── EukaryLauncher.Smoke/      ← 冒烟测试（31 条纯逻辑断言 + 端到端下载/启动）
+├── tools/                     ← UI 自动化走查脚本（uiautomation）
 └── docs/                      ← 文档资源
 ```
 
@@ -99,6 +129,9 @@ EukaryLauncher.sln
 ## 构建与运行
 
 ```bash
+git clone https://github.com/EukaryDeveloper/Eukary-Launcher.git
+cd Eukary-Launcher
+
 # 纯逻辑断言（不需要网络，秒级）
 dotnet run --project EukaryLauncher.Smoke
 
@@ -108,32 +141,31 @@ dotnet run --project EukaryLauncher.Smoke -- --install 1.20.4
 # 端到端：装完再启动，抓 90 秒日志后结束进程
 dotnet run --project EukaryLauncher.Smoke -- --launch 1.20.4
 
+# 直接跑启动器
+dotnet run --project EukaryLauncher.App
+
 # 发布自包含单文件
 dotnet publish EukaryLauncher.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 ```
 
 ---
 
-## UI 规范落地情况
+## 二次开发
 
-严格按《UI 设计图纸》实现：
-
-- **设计令牌唯一真源**：`Themes/Tokens.xaml` 定义全部颜色 / 圆角 / 字号 / 间距 / 时长，控件里零硬编码色值。换主题只需换这一份字典。
-- **统一动效曲线**：WPF 没有内置 `cubic-bezier(0.2,0.8,0.2,1)`，自写了 `CubicBezierEase`（牛顿迭代解贝塞尔参数），全站共用。
-- **动效时长三档**：120ms 微交互 / 200ms 页面切换 / 300ms 弹窗。
-- **去系统边框**：`WindowChrome` + 自绘标题栏（Logo 左、最小化/最大化/关闭右），启动 200ms 淡入 + Y 8→0，关闭 150ms 淡出 + 缩放到 0.98。
-- **无障碍**：读注册表 `MinAnimate`，系统关闭动画时全部动效降为 0。
-- **4px 栅格**：所有间距 token 落在 4/8/12/16/24/32。
-- **Logo**：自绘真核细胞意象（外膜 + 核仁），不使用任何 Minecraft 素材。
+想在这套代码上加功能、改 UI、接新加载器或新下载源，先读
+📗 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) —— 分层约定、关键数据流、
+常见扩展点的改法以及必须绕开的坑。
 
 ---
 
-## 与开发指南的两处已知偏差（有意为之）
+## 已知限制
 
-1. **没上 Serilog**。M1 只需要"内存缓冲 + 落盘文件"，自研 20 行 `LogService` 就够，等 M8 插件系统需要按插件分日志时再换。
-2. **没开 ILTrimming / NativeAOT**。指南里这条对 WPF 不适用（`NETSDK1168: 启用剪裁时不支持 WPF`）。改用 `self-contained + PublishSingleFile + EnableCompressionInSingleFile` 控制体积。
-
-另外，**指南 M5 的 Java 自动下载被提前到了 M1**——没有 Java 就点不动游戏，与其让用户卡住不如直接做掉。
+- **只能离线登录**：填用户名即玩单机，进不了正版服务器（微软登录尚未实现）
+- 整合包 / 数据包 / 资源包 / 光影包四个标签页仍是占位
+- 主页「版本设置」按钮目前只是占位提示，按版本覆盖内存 / 窗口 / JVM 参数的页面还没做
+- 额外游戏文件夹还没有添加入口；非默认文件夹里的版本可以查看和切换选中，
+  但启动仍以默认游戏目录为准
+- 暂停后继续下载时，进度显示会重新计算（下载内容本身从断点续传，不会重下）
 
 ---
 
@@ -142,22 +174,10 @@ dotnet publish EukaryLauncher.App -c Release -r win-x64 --self-contained -p:Publ
 欢迎提 Issue、改进文档、写代码。开工前请读：
 
 - 📘 [CONTRIBUTING.md](CONTRIBUTING.md) —— 分支规范、提交格式、代码约定、自测要求
+- 📗 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) —— 二次开发指南：分层、扩展点、踩坑清单
 - 🔒 [SECURITY.md](SECURITY.md) —— 漏洞报告走私密通报，不要在公开 Issue 里发
 
 想在动手前先聊聊？来 [Discussions](https://github.com/EukaryDeveloper/Eukary-Launcher/discussions)。
-
-一个简单的 PR 流程：
-
-```bash
-git clone https://github.com/EukaryDeveloper/Eukary-Launcher.git
-cd Eukary-Launcher
-git switch -c feat/m2-msa-login
-# 改代码
-dotnet run --project EukaryLauncher.Smoke       # 必跑，秒级
-git commit -m "feat(core): 实现微软登录的 XBL 换票"
-git push -u origin feat/m2-msa-login
-# 然后到 GitHub 上开 PR
-```
 
 ---
 
@@ -175,7 +195,7 @@ git push -u origin feat/m2-msa-login
 
 ## 许可证
 
-本项目以 [GPL-3.0](LICENSE) 授权发布，与 PCL2 / HMCL 保持一致。
+本项目以 [GPL-3.0](LICENSE) 授权发布。
 
 ```
 Copyright (C) 2026 DL_Hachi

@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EukaryLauncher.Core</RootNamespace>
     <AssemblyName>EukaryLauncher.Core</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 

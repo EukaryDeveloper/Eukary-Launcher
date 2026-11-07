@@ -11,7 +11,7 @@
     <RootNamespace>EukaryLauncher.App</RootNamespace>
     <AssemblyName>EukaryLauncher</AssemblyName>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
     <!-- 体积控制
          注意：指南里建议的 ILTrimming / NativeAOT 对 WPF 不适用（NETSDK1168），
