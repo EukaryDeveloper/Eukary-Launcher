@@ -49,16 +49,16 @@
                         Command="{Binding OpenProjectPageCommand}"/>
             </Grid>
 
-            <!-- 游戏版本筛选条：横向禁用滚动，让 WrapPanel 正确折行 -->
+            <!-- 游戏版本筛选条：单行横向排列，超出部分横向滚动 -->
             <ListBox ItemsSource="{Binding VersionChips}"
                      SelectedIndex="{Binding SelectedVersionIndex, Mode=TwoWay}"
                      ItemContainerStyle="{StaticResource ChipItem}"
                      Background="Transparent" BorderThickness="0" Margin="0,14,0,0"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel/>
+                        <StackPanel Orientation="Horizontal"/>
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
             </ListBox>
