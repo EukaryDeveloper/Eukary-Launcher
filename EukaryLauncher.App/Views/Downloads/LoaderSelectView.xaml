@@ -31,9 +31,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <TextBlock Text="选择模组加载器（可多选）" Style="{StaticResource TextMuted}"
-                           FontWeight="SemiBold" Margin="0,0,0,4"/>
-                <TextBlock Text="能共存的会自动放开，比如 Forge + OptiFine；互斥的会置灰并说明原因。"
-                           Style="{StaticResource TextCaption}" Margin="0,0,0,12"/>
+                           FontWeight="SemiBold" Margin="0,0,0,12"/>
 
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>

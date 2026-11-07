@@ -24,7 +24,6 @@
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="真核启动器" FontSize="{StaticResource FontSizeXl}" FontWeight="Bold"
                            Foreground="{DynamicResource Text1Brush}"/>
-                <TextBlock Text="Eukary Launcher · 最小可用版本 M1" Style="{StaticResource TextCaption}"/>
             </StackPanel>
         </StackPanel>
 
@@ -111,17 +110,6 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-
-                    <Border Background="{DynamicResource BgElevatedBrush}" CornerRadius="{StaticResource RadiusSm}"
-                            Padding="12" Margin="0,24,0,0">
-                        <StackPanel>
-                            <TextBlock Text="离线模式说明" Style="{StaticResource TextCaption}" Margin="0,0,0,4"/>
-                            <TextBlock TextWrapping="Wrap" Style="{StaticResource TextMuted}" FontSize="12">
-                                离线登录是 Mojang EULA 允许的本地玩法，只能玩单机，
-                                无法进入需要正版验证的服务器。正版登录将在 M2 支持。
-                            </TextBlock>
-                        </StackPanel>
-                    </Border>
                 </StackPanel>
             </Border>
         </Grid>

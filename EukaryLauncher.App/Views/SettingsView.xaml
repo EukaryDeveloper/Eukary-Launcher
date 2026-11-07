@@ -12,9 +12,7 @@
             <StackPanel MaxWidth="760" HorizontalAlignment="Left">
 
                 <TextBlock Text="设置" FontSize="{StaticResource FontSizeXl}" FontWeight="Bold"
-                           Foreground="{DynamicResource Text1Brush}"/>
-                <TextBlock Text="改动会即时保存，不需要点确认。鼠标划过某一行可以查看它属于哪一类。"
-                           Style="{StaticResource TextCaption}" Margin="0,6,0,24"/>
+                           Foreground="{DynamicResource Text1Brush}" Margin="0,0,0,24"/>
 
                 <!-- ============================ 游戏文件 ============================ -->
                 <TextBlock Text="游戏文件" Style="{StaticResource SettingsSectionTitle}"/>
