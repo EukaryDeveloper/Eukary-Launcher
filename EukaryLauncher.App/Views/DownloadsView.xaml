@@ -49,29 +49,56 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Top Tabs：下划线跟随选中项，选中项同时变色 -->
+        <!-- Top Tabs：绿色下划线是一根共享滑条，切换时从旧 tab 滑到新 tab；
+             文字颜色的渐变在 TabItem 模板里做（Controls.xaml） -->
         <Border Grid.Row="0" Background="{DynamicResource BgBaseBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
-            <ListBox ItemsSource="{Binding Tabs}"
-                     SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
-                     ItemContainerStyle="{StaticResource TabItem}"
-                     Background="Transparent" BorderThickness="0"
-                     Margin="24,4,24,0" Padding="0"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding}" FontSize="{StaticResource FontSizeSm}"/>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <Grid x:Name="TabBar" Margin="24,4,24,0">
+                <ListBox x:Name="TabList"
+                         ItemsSource="{Binding Tabs}"
+                         SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                         ItemContainerStyle="{StaticResource TabItem}"
+                         Background="Transparent" BorderThickness="0"
+                         Padding="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="{StaticResource FontSizeSm}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- 下划线滑条：位置/宽度由代码后置按选中项实测，margin -1 盖住分隔线 -->
+                <Border x:Name="TabUnderline" Height="2"
+                        Background="{StaticResource AccentBrush}"
+                        HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                        Margin="0,0,0,-1" IsHitTestVisible="False" Width="0">
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="TabUnderlineTf"/>
+                    </Border.RenderTransform>
+                </Border>
+            </Grid>
         </Border>
 
-        <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" Focusable="False"/>
+        <!-- Tab 内容两层交叉过渡：新页滑入淡入、旧页反向滑出淡出。
+             两层轮流当「前台」，视图实例一直留在某一层里，切回来不用重建 -->
+        <Grid x:Name="TabContent" Grid.Row="1" ClipToBounds="True">
+            <ContentControl x:Name="TabLayerUnder" Focusable="False" Visibility="Collapsed">
+                <ContentControl.RenderTransform>
+                    <TranslateTransform x:Name="TabLayerUnderTf"/>
+                </ContentControl.RenderTransform>
+            </ContentControl>
+            <ContentControl x:Name="TabLayerOver" Focusable="False">
+                <ContentControl.RenderTransform>
+                    <TranslateTransform x:Name="TabLayerOverTf"/>
+                </ContentControl.RenderTransform>
+            </ContentControl>
+        </Grid>
     </Grid>
 </UserControl>

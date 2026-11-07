@@ -779,8 +779,11 @@
         </Setter>
     </Style>
 
+    <!-- 顶部 Tab：文字颜色在灰与主题绿之间平滑渐变。
+         下划线不在每项模板里——由使用方放一根共享滑条（见 DownloadsView），
+         切换时整体从旧位置滑到新位置，而不是各自消失/出现。
+         颜色动画只能动模板内实例化的画刷：指向 Tokens.xaml 的共享画刷会把所有 tab 一起染色。 -->
     <Style x:Key="TabItem" TargetType="ListBoxItem">
-        <Setter Property="Foreground" Value="{StaticResource Text2Brush}"/>
         <Setter Property="FontSize" Value="{StaticResource FontSizeSm}"/>
         <Setter Property="Padding" Value="14,8"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -788,19 +791,59 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}">
-                        <Border x:Name="Underline" BorderBrush="Transparent" BorderThickness="0,0,0,2"
-                                Margin="0,0,0,-1">
-                            <ContentPresenter TextBlock.Foreground="{TemplateBinding Foreground}"/>
-                        </Border>
+                    <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter x:Name="ContentHost">
+                            <TextBlock.Foreground>
+                                <SolidColorBrush Color="{StaticResource Text2Color}"/>
+                            </TextBlock.Foreground>
+                        </ContentPresenter>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Foreground" Value="{StaticResource Text1Brush}"/>
-                        </Trigger>
+                        <!-- 悬停变亮（未选中时）。先声明：让选中触发器的动画后应用、盖过它 -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsSelected" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <MultiTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="ContentHost"
+                                                        Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
+                                                        To="{StaticResource Text1Color}" Duration="0:0:0.16"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="ContentHost"
+                                                        Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
+                                                        To="{StaticResource Text2Color}" Duration="0:0:0.16"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiTrigger.ExitActions>
+                        </MultiTrigger>
+                        <!-- 选中变绿 -->
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                            <Setter TargetName="Underline" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="ContentHost"
+                                                        Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
+                                                        To="{StaticResource AccentColor}" Duration="0:0:0.22"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="ContentHost"
+                                                        Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
+                                                        To="{StaticResource Text2Color}" Duration="0:0:0.22"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
