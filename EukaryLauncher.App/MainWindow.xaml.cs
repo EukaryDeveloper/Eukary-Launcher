@@ -131,9 +131,10 @@ public partial class MainWindow : Window
     };
 
     private int _pageIndex;
-    private System.Windows.Threading.DispatcherTimer? _pagePushTimer;
     private readonly System.Diagnostics.Stopwatch _pagePushClock = new();
     private double _pushFrom, _pushTo;
+    private bool _pushFrameHooked;
+    private double _lastPushMs = -1000;
 
     /// <summary>一次推动的总时长，与跨几页无关。</summary>
     private const int PagePushMs = 380;
@@ -151,8 +152,9 @@ public partial class MainWindow : Window
         // 系统关动效 / 布局还没量出高度：直接落位
         if (!AnimationHelper.IsEnabled || height <= 0)
         {
-            StopPagePushTimer();
-            PageScroller.ScrollToVerticalOffset(target * Math.Max(height, 0));
+            StopPagePush();
+            var at = target * Math.Max(height, 0);
+            PageScroller.ScrollToVerticalOffset(at);
             return;
         }
 
@@ -160,46 +162,59 @@ public partial class MainWindow : Window
         _pushFrom = PageScroller.VerticalOffset;
         _pushTo = target * height;
         _pagePushClock.Restart();
-        if (_pagePushTimer is null)
+        _lastPushMs = -1000;
+
+        // 用渲染帧驱动而不是 DispatcherTimer：后者默认 Background 优先级，
+        // 滚动这些重帧会把 tick 饿死，等积压渲染完才跑一次，
+        // 按真实时间算进度就变成「冻结 160ms 然后一帧跳到 80%」——就是所谓的卡顿。
+        if (!_pushFrameHooked)
         {
-            _pagePushTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(16),
-            };
-            _pagePushTimer.Tick += OnPagePushTick;
+            System.Windows.Media.CompositionTarget.Rendering += OnPagePushFrame;
+            _pushFrameHooked = true;
         }
-        _pagePushTimer.Start();
     }
 
-    private void OnPagePushTick(object? sender, EventArgs e)
+    /// <summary>每个渲染帧前更新一次偏移，位移与屏幕刷新严格对齐。</summary>
+    private void OnPagePushFrame(object? sender, EventArgs e)
     {
-        if (PageScroller is null) { StopPagePushTimer(); return; }
+        if (PageScroller is null) { StopPagePush(); return; }
 
-        var t = Math.Min(1.0, _pagePushClock.ElapsedMilliseconds / (double)PagePushMs);
-        var eased = PageEase.Ease(t);
-        var to = _pushTo;
+        var elapsed = _pagePushClock.Elapsed.TotalMilliseconds;
+
+        // WPF 偶尔在同一帧里连发两次 Rendering（间隔 1~2ms），
+        // 两次都推进会让某帧位移翻倍，看上去就是「一顿」。间隔太近的丢掉。
+        if (elapsed < PagePushMs && elapsed - _lastPushMs < 8.0) return;
+        _lastPushMs = elapsed;
+
+        var t = Math.Min(1.0, elapsed / PagePushMs);
 
         // 期间窗口尺寸变了：终点按最新页高重算
-        if (PageHost.ActualHeight > 0)
-            to = _pageIndex * PageHost.ActualHeight;
+        var to = PageHost.ActualHeight > 0 ? _pageIndex * PageHost.ActualHeight : _pushTo;
+        var offset = _pushFrom + (to - _pushFrom) * PagePushEase.Ease(t);
 
-        PageScroller.ScrollToVerticalOffset(_pushFrom + (to - _pushFrom) * eased);
+        PageScroller.ScrollToVerticalOffset(offset);
 
         if (t >= 1)
         {
-            StopPagePushTimer();
+            StopPagePush();
             PageScroller.ScrollToVerticalOffset(to);
         }
     }
 
-    private void StopPagePushTimer() => _pagePushTimer?.Stop();
+    private void StopPagePush()
+    {
+        if (!_pushFrameHooked) return;
+        System.Windows.Media.CompositionTarget.Rendering -= OnPagePushFrame;
+        _pushFrameHooked = false;
+    }
 
-    /// <summary>窗口尺寸变了：按新页高把轨道校正回当前页（正在推动时由 tick 自行收敛）。</summary>
+    /// <summary>窗口尺寸变了：按新页高把轨道校正回当前页（推动中由帧回调自行收敛）。</summary>
     private void OnPageHostSizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (PageScroller is null) return;
-        if (_pagePushTimer is { IsEnabled: true }) return;
-        PageScroller.ScrollToVerticalOffset(_pageIndex * e.NewSize.Height);
+        if (_pushFrameHooked) return;
+        var at = _pageIndex * e.NewSize.Height;
+        PageScroller.ScrollToVerticalOffset(at);
     }
 
     // ==================== 版本选择页：四向转场动画 ====================
@@ -282,6 +297,18 @@ public partial class MainWindow : Window
     {
         ControlPoint1 = new Point(0.2, 0),
         ControlPoint2 = new Point(0, 1),
+    };
+
+    /// <summary>
+    /// 页面推动专用的缓动：cubic-bezier(0.25, 0.1, 0.2, 1)。
+    /// 不用 PageEase 那条：它的速度峰值挤在最前面（前 20% 时间就跑掉 50% 位移），
+    /// 之后一段长尾慢慢挪，长位移下容易看成「一冲一顿」。
+    /// 这条把速度峰值挪到 20%~30% 之间、衰减更平缓，逐帧位移变化更均匀。
+    /// </summary>
+    private static System.Windows.Media.Animation.EasingFunctionBase PagePushEase => new Animation.CubicBezierEase
+    {
+        ControlPoint1 = new Point(0.25, 0.1),
+        ControlPoint2 = new Point(0.2, 1),
     };
 
     /// <summary>X 平滑动画；无动画环境（系统关动效）直接落到终点。</summary>
@@ -423,6 +450,9 @@ public partial class MainWindow : Window
         if (_isClosing) return;
         _isClosing = true;
         e.Cancel = true;
+
+        // 关窗前解掉渲染帧回调，避免关窗过程中还在驱动轨道
+        StopPagePush();
 
         if (!AnimationHelper.IsEnabled)
         {
