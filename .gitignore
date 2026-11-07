@@ -45,3 +45,6 @@ ui-smoke.png
 ## 宣传素材与 UI 走查截图（本地资产，不进仓库）
 promo/
 tools/UiShots/
+
+## 本地代码备份（bundle/zip）
+backups/
