@@ -10,25 +10,12 @@
              FontFamily="{StaticResource FontSans}">
     <Grid Margin="28,24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 标题 -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,24">
-            <Grid Width="34" Height="34" Margin="0,0,14,0" VerticalAlignment="Center">
-                <Ellipse Stroke="{DynamicResource AccentBrush}" StrokeThickness="2"/>
-                <Ellipse Width="11" Height="11" Fill="{DynamicResource AccentBrush}"/>
-            </Grid>
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="真核启动器" FontSize="{StaticResource FontSizeXl}" FontWeight="Bold"
-                           Foreground="{DynamicResource Text1Brush}"/>
-            </StackPanel>
-        </StackPanel>
-
-        <!-- 中部：启动区 -->
-        <Grid Grid.Row="1">
+        <!-- 启动区 -->
+        <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="320"/>
@@ -115,7 +102,7 @@
         </Grid>
 
         <!-- 底部：最近日志 -->
-        <Border Grid.Row="2" Style="{StaticResource Panel}" Padding="16,12" Margin="0,20,0,0" Height="120">
+        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="16,12" Margin="0,20,0,0" Height="120">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
