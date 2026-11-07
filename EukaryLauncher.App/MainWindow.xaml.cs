@@ -86,14 +86,18 @@ public partial class MainWindow : Window
         }
 
         Closing += OnClosing;
-        Loaded += (_, _) => PlayPageFade();
+        Loaded += (_, _) =>
+        {
+            PageHost.SizeChanged += OnPageHostSizeChanged;
+            PlayPageFade();
+        };
         SourceInitialized += OnSourceInitialized;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.CurrentViewModel))
-            PlayPageFade();
+        if (e.PropertyName == nameof(MainViewModel.CurrentPage))
+            PlayPagePush();
     }
 
     private void PlayPageFade()
@@ -109,6 +113,97 @@ public partial class MainWindow : Window
             EasingFunction = new Animation.CubicBezierEase(),
         };
         PageHost.BeginAnimation(OpacityProperty, fade);
+    }
+
+    // ==================== 主页面切换：竖直轨道推动 ====================
+    // 五个页面按侧栏顺序自上而下排在一条轨道上，切换时整条轨道滚动：
+    //   去更下面的页（主页→下载）→ 轨道上移，原页向上退、新页从下进；
+    //   去更上面的页（设置→日志）→ 轨道下移，方向正好相反。
+    // 位移是「页数差 × 页高」，但时长固定，所以跨多页会快速掠过中间页面而不是变慢。
+    //
+    // 实现走 ScrollViewer.ScrollToVerticalOffset（逐帧驱动），不能用 TranslateTransform：
+    // 本机渲染线程对平移的大元素不重绘（脏区域 bug），滚动路径才有可靠的呈现。
+
+    /// <summary>页面在轨道上的物理顺序，必须与侧栏 NavItems 一致。</summary>
+    private static readonly NavPage[] PageOrder =
+    {
+        NavPage.Home, NavPage.Download, NavPage.Console, NavPage.Settings, NavPage.About,
+    };
+
+    private int _pageIndex;
+    private System.Windows.Threading.DispatcherTimer? _pagePushTimer;
+    private readonly System.Diagnostics.Stopwatch _pagePushClock = new();
+    private double _pushFrom, _pushTo;
+
+    /// <summary>一次推动的总时长，与跨几页无关。</summary>
+    private const int PagePushMs = 380;
+
+    private void PlayPagePush()
+    {
+        if (PageHost is null || PageScroller is null) return;
+
+        var target = Array.IndexOf(PageOrder, _vm.CurrentPage);
+        if (target < 0) target = 0;
+        _pageIndex = target;
+
+        var height = PageHost.ActualHeight;
+
+        // 系统关动效 / 布局还没量出高度：直接落位
+        if (!AnimationHelper.IsEnabled || height <= 0)
+        {
+            StopPagePushTimer();
+            PageScroller.ScrollToVerticalOffset(target * Math.Max(height, 0));
+            return;
+        }
+
+        // 从当前滚动位置滑到新位置，连点也不会跳
+        _pushFrom = PageScroller.VerticalOffset;
+        _pushTo = target * height;
+        _pagePushClock.Restart();
+        if (_pagePushTimer is null)
+        {
+            _pagePushTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16),
+            };
+            _pagePushTimer.Tick += OnPagePushTick;
+        }
+        _pagePushTimer.Start();
+    }
+
+    private void OnPagePushTick(object? sender, EventArgs e)
+    {
+        if (PageScroller is null) { StopPagePushTimer(); return; }
+
+        var t = Math.Min(1.0, _pagePushClock.ElapsedMilliseconds / (double)PagePushMs);
+        var eased = PageEase.Ease(t);
+        var to = _pushTo;
+
+        // 期间窗口尺寸变了：终点按最新页高重算
+        if (PageHost.ActualHeight > 0)
+            to = _pageIndex * PageHost.ActualHeight;
+
+        PageScroller.ScrollToVerticalOffset(_pushFrom + (to - _pushFrom) * eased);
+
+        if (t >= 1)
+        {
+            StopPagePushTimer();
+            PageScroller.ScrollToVerticalOffset(to);
+        }
+    }
+
+    private void StopPagePushTimer() => _pagePushTimer?.Stop();
+
+    /// <summary>轨道不响应滚轮，避免用户滚走后与选中页脱节（页面内部滚动不受影响）。</summary>
+    private void OnPageHostPreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        => e.Handled = true;
+
+    /// <summary>窗口尺寸变了：按新页高把轨道校正回当前页（正在推动时由 tick 自行收敛）。</summary>
+    private void OnPageHostSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (PageScroller is null) return;
+        if (_pagePushTimer is { IsEnabled: true }) return;
+        PageScroller.ScrollToVerticalOffset(_pageIndex * e.NewSize.Height);
     }
 
     // ==================== 版本选择页：四向转场动画 ====================

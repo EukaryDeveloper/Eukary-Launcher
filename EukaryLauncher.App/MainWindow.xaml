@@ -187,14 +187,39 @@
                     </Grid>
                 </Border>
 
-                <!-- 页面 -->
-                <ContentControl Grid.Column="1" x:Name="PageHost"
-                                Content="{Binding CurrentViewModel}"
-                                Focusable="False">
-                    <ContentControl.RenderTransform>
+                <!-- 页面：一条竖直轨道，5 个页面按侧栏顺序自上而下排列。
+                     切换时整条轨道上下滚动（跨度大就滚得快，总时长不变），
+                     中途会真的经过中间页面。
+                     注意：本机渲染线程对 TranslateTransform 平移的大元素不重绘
+                     （脏区域 bug），滚动呈现必须走 ScrollViewer 路径。
+                     PageHost 是视口，顺便承担版本选择页的位移/淡化。 -->
+                <Border Grid.Column="1" x:Name="PageHost" ClipToBounds="True" Focusable="False">
+                    <Border.RenderTransform>
                         <TranslateTransform x:Name="PageHostTf"/>
-                    </ContentControl.RenderTransform>
-                </ContentControl>
+                    </Border.RenderTransform>
+                    <ScrollViewer x:Name="PageScroller" Focusable="False"
+                                  VerticalScrollBarVisibility="Hidden"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  PreviewMouseWheel="OnPageHostPreviewMouseWheel">
+                        <StackPanel x:Name="PageRail" VerticalAlignment="Top">
+                            <ContentControl Content="{Binding Home}" Focusable="False"
+                                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                            Height="{Binding ActualHeight, ElementName=PageHost}"/>
+                            <ContentControl Content="{Binding Download}" Focusable="False"
+                                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                            Height="{Binding ActualHeight, ElementName=PageHost}"/>
+                            <ContentControl Content="{Binding Console}" Focusable="False"
+                                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                            Height="{Binding ActualHeight, ElementName=PageHost}"/>
+                            <ContentControl Content="{Binding Settings}" Focusable="False"
+                                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                            Height="{Binding ActualHeight, ElementName=PageHost}"/>
+                            <ContentControl Content="{Binding About}" Focusable="False"
+                                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                            Height="{Binding ActualHeight, ElementName=PageHost}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
             </Grid>
 
             <!-- ===================== 版本选择覆盖层 =====================
