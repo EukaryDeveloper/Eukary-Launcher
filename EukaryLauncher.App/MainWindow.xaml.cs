@@ -194,10 +194,6 @@ public partial class MainWindow : Window
 
     private void StopPagePushTimer() => _pagePushTimer?.Stop();
 
-    /// <summary>轨道不响应滚轮，避免用户滚走后与选中页脱节（页面内部滚动不受影响）。</summary>
-    private void OnPageHostPreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
-        => e.Handled = true;
-
     /// <summary>窗口尺寸变了：按新页高把轨道校正回当前页（正在推动时由 tick 自行收敛）。</summary>
     private void OnPageHostSizeChanged(object sender, SizeChangedEventArgs e)
     {

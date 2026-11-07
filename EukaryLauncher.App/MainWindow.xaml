@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:EukaryLauncher.App.ViewModels"
         xmlns:views="clr-namespace:EukaryLauncher.App.Views"
         xmlns:svc="clr-namespace:EukaryLauncher.App.Services"
+        xmlns:controls="clr-namespace:EukaryLauncher.App.Controls"
         xmlns:anim="clr-namespace:EukaryLauncher.App.Animation"
         mc:Ignorable="d"
         Title="真核启动器"
@@ -197,10 +198,10 @@
                     <Border.RenderTransform>
                         <TranslateTransform x:Name="PageHostTf"/>
                     </Border.RenderTransform>
-                    <ScrollViewer x:Name="PageScroller" Focusable="False"
-                                  VerticalScrollBarVisibility="Hidden"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  PreviewMouseWheel="OnPageHostPreviewMouseWheel">
+                    <!-- PageScrollViewer：轨道自身不吃滚轮，内部列表照常滚 -->
+                    <controls:PageScrollViewer x:Name="PageScroller" Focusable="False"
+                                               VerticalScrollBarVisibility="Hidden"
+                                               HorizontalScrollBarVisibility="Disabled">
                         <StackPanel x:Name="PageRail" VerticalAlignment="Top">
                             <ContentControl Content="{Binding Home}" Focusable="False"
                                             HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
@@ -218,7 +219,7 @@
                                             HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                             Height="{Binding ActualHeight, ElementName=PageHost}"/>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:PageScrollViewer>
                 </Border>
             </Grid>
 
