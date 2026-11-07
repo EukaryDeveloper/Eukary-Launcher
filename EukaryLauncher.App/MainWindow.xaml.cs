@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using EukaryLauncher.App.Services;
 using EukaryLauncher.App.ViewModels;
 using EukaryLauncher.Core.Models;
@@ -90,14 +91,50 @@ public partial class MainWindow : Window
         {
             PageHost.SizeChanged += OnPageHostSizeChanged;
             PlayPageFade();
+            StartStallProbe();
         };
         SourceInitialized += OnSourceInitialized;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.CurrentPage))
-            PlayPagePush();
+        if (e.PropertyName != nameof(MainViewModel.CurrentPage)) return;
+        PlayPagePush();
+        SchedulePendingActivation();
+    }
+
+    // ==================== 页面数据加载延后 ====================
+    // 动画期间不碰磁盘/网络/列表重建：这些同步开销会和逐帧滚动抢 UI 线程。
+    // 一律等轨道落定后再跑，用户看到的只是「页面先滑到位，内容再填上」。
+
+    private readonly Queue<Action> _afterPush = new();
+
+    private void SchedulePendingActivation()
+    {
+        var activation = _vm.TakePendingActivation();
+        if (activation is null) return;
+
+        // 转场动画正在跑：排队，落定后统一执行
+        if (_pushFrameHooked)
+        {
+            _afterPush.Enqueue(activation);
+            return;
+        }
+
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, activation);
+    }
+
+    private void RunAfterPush()
+    {
+        if (_afterPush.Count == 0) return;
+        var batch = _afterPush.ToArray();
+        _afterPush.Clear();
+
+        // 不在帧回调里直接跑：那会把加载开销算进当帧
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            foreach (var action in batch) action();
+        }));
     }
 
     private void PlayPageFade()
@@ -113,6 +150,67 @@ public partial class MainWindow : Window
             EasingFunction = new Animation.CubicBezierEase(),
         };
         PageHost.BeginAnimation(OpacityProperty, fade);
+    }
+
+    // ==================== 排障：UI 线程卡顿探针 ====================
+    // EKL_PUSH_TRACE=1 时启用：后台线程每 4ms 往 UI 线程塞一个空委托量往返耗时，
+    // 一次推动结束时把统计写进 %TEMP%\ekl-push-trace.txt（tools/ui_push_trace.py 会读）。
+    // 比看 Rendering 回调间隔可靠：一次滚动会触发若干次 Rendering，
+    // 光看间隔分不清「掉帧」和「多跑了几次渲染」，而往返耗时长 = UI 线程被占住了。
+
+    private static bool PushTrace => Environment.GetEnvironmentVariable("EKL_PUSH_TRACE") == "1";
+
+    private readonly System.Text.StringBuilder _pushTrace = new();
+
+    private void TracePush(string line)
+    {
+        if (PushTrace) _pushTrace.AppendLine(line);
+    }
+
+    /// <summary>把累积的排障数据一次性落盘。</summary>
+    private void FlushPushTrace()
+    {
+        if (!PushTrace || _pushTrace.Length == 0) return;
+        try
+        {
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ekl-push-trace.txt");
+            System.IO.File.AppendAllText(path, _pushTrace.ToString());
+        }
+        catch
+        {
+            // 排障用，写不进去就算了
+        }
+        _pushTrace.Clear();
+    }
+
+    // ---- UI 线程卡顿探针：后台每 4ms 往 UI 线程塞一个空委托，量往返耗时 ----
+    // 比看 Rendering 回调间隔可靠：WPF 的一次滚动会额外触发若干次 Rendering，
+    // 光看间隔分不清「掉帧」和「多跑了几次渲染」，而往返耗时长 = UI 线程被占住了。
+
+    private bool _stallProbeOn;
+    private readonly List<double> _stallSamples = new();
+    private readonly List<double> _stallAt = new();
+
+    private async void StartStallProbe()
+    {
+        if (!PushTrace || _stallProbeOn) return;
+        _stallProbeOn = true;
+        try
+        {
+            while (_stallProbeOn)
+            {
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Input);
+                clock.Stop();
+                _stallSamples.Add(clock.Elapsed.TotalMilliseconds);
+                _stallAt.Add(_pushFrameHooked ? _pagePushClock.Elapsed.TotalMilliseconds : -1);
+                await Task.Delay(4);
+            }
+        }
+        catch
+        {
+            _stallProbeOn = false;
+        }
     }
 
     // ==================== 主页面切换：竖直轨道推动 ====================
@@ -145,6 +243,7 @@ public partial class MainWindow : Window
 
         var target = Array.IndexOf(PageOrder, _vm.CurrentPage);
         if (target < 0) target = 0;
+        var from = _pageIndex;
         _pageIndex = target;
 
         var height = PageHost.ActualHeight;
@@ -153,10 +252,62 @@ public partial class MainWindow : Window
         if (!AnimationHelper.IsEnabled || height <= 0)
         {
             StopPagePush();
-            var at = target * Math.Max(height, 0);
-            PageScroller.ScrollToVerticalOffset(at);
+            PageScroller.ScrollToVerticalOffset(target * Math.Max(height, 0));
             return;
         }
+
+        // 目标页此前一直在视口外，WPF 没给它排过版也没光栅过。直接开滚的话，
+        // 这份开销要算在「新页面第一次露面」的那一帧里（实测 15~40ms，等于顿一帧）。
+        // 先让轨道露出 2px 再退回来：这一帧就把排版和首轮光栅做完了，
+        // 用户看不见（2px），但动画第一帧就只剩增量绘制。
+        var direction = Math.Sign(target - from);
+        if (direction != 0 && !_pushFrameHooked && !_peeking)
+        {
+            var baseOffset = from * height;
+            var peek = baseOffset + direction * 2;
+            if (peek >= 0)
+            {
+                _pendingTarget = target;
+                _peekRestore = baseOffset;
+                _peekClock.Restart();
+                _peeking = true;
+                PageScroller.ScrollToVerticalOffset(peek);
+                System.Windows.Media.CompositionTarget.Rendering += OnPeekFrame;
+                return;
+            }
+        }
+
+        StartPush(target, height);
+    }
+
+    // ---- 露 2px 预热：等这一帧真的渲出来（约 20ms）再把轨道收回原位 ----
+
+    private bool _peeking;
+    private int _pendingTarget;
+    private double _peekRestore;
+    private readonly System.Diagnostics.Stopwatch _peekClock = new();
+
+    private void OnPeekFrame(object? sender, EventArgs e)
+    {
+        // 只等一帧：20ms 已覆盖一次完整合成
+        if (_peekClock.Elapsed.TotalMilliseconds < 20) return;
+
+        System.Windows.Media.CompositionTarget.Rendering -= OnPeekFrame;
+        _peeking = false;
+        if (PageScroller is null) return;
+
+        // 预热期间用户又点了别的页：这次预热作废，别把它拉回去
+        if (_pushFrameHooked || _pendingTarget != _pageIndex) return;
+
+        PageScroller.ScrollToVerticalOffset(_peekRestore);
+        StartPush(_pendingTarget, PageHost.ActualHeight);
+    }
+
+    private void StartPush(int target, double height)
+    {
+        _pageIndex = target;
+
+        if (PushTrace) { _stallSamples.Clear(); _stallAt.Clear(); }
 
         // 从当前滚动位置滑到新位置，连点也不会跳
         _pushFrom = PageScroller.VerticalOffset;
@@ -203,15 +354,36 @@ public partial class MainWindow : Window
 
     private void StopPagePush()
     {
+        if (PushTrace && _stallSamples.Count > 0)
+        {
+            var sorted = _stallSamples.OrderBy(x => x).ToList();
+            var p95 = sorted[(int)((sorted.Count - 1) * 0.95)];
+            var worst = _stallSamples.IndexOf(sorted[^1]);
+            TracePush($"stall n={sorted.Count} max={sorted[^1]:F1}ms@{_stallAt[worst]:F0}ms " +
+                      $"p95={p95:F1}ms over16={sorted.Count(x => x > 16.7)}");
+            _stallSamples.Clear();
+            _stallAt.Clear();
+        }
+
+        FlushPushTrace();
+
+        if (_peeking)
+        {
+            System.Windows.Media.CompositionTarget.Rendering -= OnPeekFrame;
+            _peeking = false;
+        }
+
         if (!_pushFrameHooked) return;
         System.Windows.Media.CompositionTarget.Rendering -= OnPagePushFrame;
         _pushFrameHooked = false;
+        RunAfterPush();
     }
 
     /// <summary>窗口尺寸变了：按新页高把轨道校正回当前页（推动中由帧回调自行收敛）。</summary>
     private void OnPageHostSizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (PageScroller is null) return;
+
         if (_pushFrameHooked) return;
         var at = _pageIndex * e.NewSize.Height;
         PageScroller.ScrollToVerticalOffset(at);
@@ -452,6 +624,7 @@ public partial class MainWindow : Window
         e.Cancel = true;
 
         // 关窗前解掉渲染帧回调，避免关窗过程中还在驱动轨道
+        _afterPush.Clear();
         StopPagePush();
 
         if (!AnimationHelper.IsEnabled)

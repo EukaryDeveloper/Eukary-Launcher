@@ -44,6 +44,21 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private ViewModelBase? currentViewModel;
 
+    /// <summary>
+    /// 切页后要做的数据加载，等主窗口把转场动画放完再执行。
+    /// 不这样做的话，OnNavigatedAsync 里同步的那段（读版本目录、重建列表、探测 Java）
+    /// 会跟动画抢同一个 UI 线程，正好把起步那几帧挤掉 —— 看上去就是一跳页先顿一下。
+    /// </summary>
+    public Action? PendingActivation { get; private set; }
+
+    /// <summary>取走待执行的加载动作（主窗口在动画落定后调用）。</summary>
+    public Action? TakePendingActivation()
+    {
+        var pending = PendingActivation;
+        PendingActivation = null;
+        return pending;
+    }
+
     partial void OnCurrentPageChanged(NavPage value)
     {
         ViewModelBase vm = value switch
@@ -55,7 +70,7 @@ public sealed partial class MainViewModel : ObservableObject
             _ => About,
         };
         CurrentViewModel = vm;
-        _ = vm.OnNavigatedAsync();
+        PendingActivation = () => _ = vm.OnNavigatedAsync();
     }
 
     public IReadOnlyList<NavItem> NavItems { get; } = new[]
