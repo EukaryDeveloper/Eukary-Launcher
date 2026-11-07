@@ -13,6 +13,18 @@ public static class DownloadJobs
     private static readonly string[] VanillaSteps =
         { "版本 JSON", "主 jar", "依赖库", "本地库", "资产索引", "资源文件", "日志配置" };
 
+    /// <summary>
+    /// 安装完成时按当时的全局「版本隔离设定」给新版本记下隔离旗标。
+    /// 之后改设置不影响已装版本——这就是「仅对之后新安装的版本生效」的实现方式。
+    /// </summary>
+    private static void MarkIsolation(GameContext ctx, string versionId, VersionJson? version)
+    {
+        if (version is null) return;
+        var isolated = IsolationPolicy.ShouldIsolate(AppServices.Settings.Current.VersionIsolation, version);
+        VersionIsolationStore.Set(ctx.Paths, versionId, isolated);
+        LogService.Instance.Info($"版本 {versionId} 隔离状态：{(isolated ? "开启" : "关闭")}");
+    }
+
     public static DownloadJob Vanilla(VersionManifestEntry entry)
     {
         var job = new DownloadJob
@@ -39,6 +51,7 @@ public static class DownloadJobs
                 throw;
             }
             ctx.RefreshInstalled();
+            MarkIsolation(ctx, entry.Id, ctx.LoadInstalledVersion(entry.Id));
         };
 
         return job;
@@ -82,6 +95,7 @@ public static class DownloadJobs
             j.Report(2, 100, "已关联", JobStatus.Succeeded);
 
             ctx.RefreshInstalled();
+            MarkIsolation(ctx, profile.Id, profile);
         };
 
         return job;
@@ -274,6 +288,7 @@ public static class DownloadJobs
 
             j.Report(2, 100, $"已安装 {createdId}", JobStatus.Succeeded);
             ctx.RefreshInstalled();
+            MarkIsolation(ctx, createdId, ctx.LoadInstalledVersion(createdId));
         };
 
         return job;
@@ -458,6 +473,7 @@ public static class DownloadJobs
 
             j.Report(2, 100, $"已建立 {versionId}", JobStatus.Succeeded);
             ctx.RefreshInstalled();
+            MarkIsolation(ctx, versionId, json);
         };
 
         return job;

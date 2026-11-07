@@ -11,10 +11,11 @@ namespace EukaryLauncher.App.Services;
 public static class ModDeployer
 {
     /// <summary>把 <paramref name="gameVersion"/> 的模组同步到游戏真正会读的 mods 目录。</summary>
+    /// <param name="gameDir">版本隔离时传版本目录（mods 落 versions/&lt;id&gt;/mods），null 表示游戏根目录。</param>
     /// <returns>复制到位的模组数量。</returns>
-    public static int Deploy(GamePaths paths, string gameVersion, ModIndexService index)
+    public static int Deploy(GamePaths paths, string gameVersion, ModIndexService index, string? gameDir = null)
     {
-        var shared = SharedModsDir(paths);
+        var shared = gameDir is null ? SharedModsDir(paths) : Path.Combine(gameDir, "mods");
         Directory.CreateDirectory(shared);
 
         // 1. 撤走别的游戏版本的模组。

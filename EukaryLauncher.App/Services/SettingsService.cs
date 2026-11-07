@@ -20,6 +20,9 @@ public sealed class LauncherSettings
     /// <summary>游戏启动后启动器窗口的行为。</summary>
     public LauncherVisibility LauncherVisibility { get; set; } = LauncherVisibility.Unchanged;
 
+    /// <summary>版本隔离策略：决定新安装的版本是否用 versions/&lt;id&gt;/ 作独立游戏目录。</summary>
+    public VersionIsolation VersionIsolation { get; set; } = VersionIsolation.All;
+
     /// <summary>旧版本的开关字段，仅用于迁移：false 曾表示“游戏启动后关闭启动器”。</summary>
     public bool KeepLauncherOpen { get; set; } = true;
     public int WindowWidth { get; set; } = 854;

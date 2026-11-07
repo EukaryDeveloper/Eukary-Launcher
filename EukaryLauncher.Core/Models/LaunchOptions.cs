@@ -58,6 +58,12 @@ public sealed record LaunchOptions
 
     /// <summary>游戏启动后启动器窗口的行为。</summary>
     public LauncherVisibility Visibility { get; init; } = LauncherVisibility.Unchanged;
+
+    /// <summary>
+    /// 版本隔离时的游戏目录（versions/&lt;id&gt;/），游戏会从这里读写存档、资源包、配置。
+    /// null 表示不隔离，用 GameDirectory。库与资产始终来自 GameDirectory。
+    /// </summary>
+    public string? EffectiveGameDirectory { get; init; }
 }
 
 /// <summary>

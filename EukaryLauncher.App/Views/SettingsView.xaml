@@ -251,6 +251,23 @@
                                         Command="{Binding OpenJvmDialogCommand}"/>
                             </Grid>
                         </ContentControl>
+                        <ContentControl Style="{StaticResource SettingsRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <TextBlock Text="版本隔离设定" Style="{StaticResource TextBody}"/>
+                                    <TextBlock Text="新安装的版本是否用独立目录存放存档、资源包与配置"
+                                               Style="{StaticResource TextCaption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding IsolationOptions}"
+                                          SelectedValue="{Binding VersionIsolation, Mode=TwoWay}"
+                                          SelectedValuePath="Value" DisplayMemberPath="DisplayName"
+                                          HorizontalAlignment="Right" Width="240" VerticalAlignment="Center"/>
+                            </Grid>
+                        </ContentControl>
                         <ContentControl Style="{StaticResource SettingsRowLast}">
                             <Grid>
                                 <Grid.ColumnDefinitions>

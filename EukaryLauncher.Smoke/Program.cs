@@ -140,6 +140,42 @@ Check("旧版 minecraftArguments 拆分正确",
     legacyArgs.SequenceEqual(new[] { "--username", "Eukary", "--version", "1.20.4", "--gameDir", paths.Root }),
     string.Join(" ", legacyArgs));
 
+// ---------------- 版本隔离策略 ----------------
+
+var vanillaJson = new VersionJson { Id = "1.20.4", MainClass = "net.minecraft.client.main.Main", Type = "release" };
+var snapshotJson = new VersionJson { Id = "24w14a", MainClass = "net.minecraft.client.main.Main", Type = "snapshot" };
+var oldBetaJson = new VersionJson { Id = "b1.7.3", MainClass = "net.minecraft.client.Minecraft", Type = "old_beta" };
+var fabricJson = new VersionJson
+{
+    Id = "fabric-loader-0.20.1-1.19.2",
+    MainClass = "net.fabricmc.loader.impl.launch.knot.KnotClient",
+    Type = null, // Fabric 元服务的 profile 不带 type
+    Libraries = { new() { Name = "org.ow2.asm:asm:9.6" }, new() { Name = "net.fabricmc:fabric-loader:0.20.1" } },
+};
+var optifineJson = new VersionJson
+{
+    Id = "OptiFine_HD_U_I6",
+    MainClass = "net.minecraft.launchwrapper.Launch",
+    Type = "release",
+    Libraries = { new() { Name = "optifine:OptiFine:HD_U_I6" } },
+};
+
+Check("隔离策略：正式版在「隔离所有版本」下隔离", IsolationPolicy.ShouldIsolate(VersionIsolation.All, vanillaJson));
+Check("隔离策略：正式版在「仅 Mod」下不隔离", !IsolationPolicy.ShouldIsolate(VersionIsolation.ModdedOnly, vanillaJson));
+Check("隔离策略：快照在「仅非正式版」下隔离", IsolationPolicy.ShouldIsolate(VersionIsolation.SnapshotsOnly, snapshotJson));
+Check("隔离策略：old_beta 算非正式版", IsolationPolicy.ShouldIsolate(VersionIsolation.SnapshotsOnly, oldBetaJson));
+Check("隔离策略：Fabric（无 type）不算非正式版但算 Mod",
+    !IsolationPolicy.ShouldIsolate(VersionIsolation.SnapshotsOnly, fabricJson)
+    && IsolationPolicy.ShouldIsolate(VersionIsolation.ModdedOnly, fabricJson));
+Check("隔离策略：OptiFine 算 Mod（库里有 optifine 关键字）",
+    IsolationPolicy.ShouldIsolate(VersionIsolation.ModdedOnly, optifineJson));
+Check("隔离策略：「关闭」下谁都不隔离",
+    !IsolationPolicy.ShouldIsolate(VersionIsolation.Off, vanillaJson)
+    && !IsolationPolicy.ShouldIsolate(VersionIsolation.Off, fabricJson));
+Check("隔离策略：Mod+快照档两者都隔离",
+    IsolationPolicy.ShouldIsolate(VersionIsolation.ModdedAndSnapshots, fabricJson)
+    && IsolationPolicy.ShouldIsolate(VersionIsolation.ModdedAndSnapshots, snapshotJson));
+
 Console.WriteLine();
 
 // ---------------- 网络部分 ----------------

@@ -41,9 +41,12 @@ public sealed class GameLauncher
     {
         var java = ResolveJava(options.JavaPath);
 
+        // 版本隔离：游戏目录指向 versions/<id>/（存档、资源包、配置落那里），库与资产仍在根目录
+        var gameDir = options.EffectiveGameDirectory ?? paths.Root;
+
         // 老版本（jar 带 lang/ 目录）在启动前修正 options.txt 的语言大小写，
         // 否则同目录混装的新版本写下的 lang:zh_cn 会让它一启动就 NPE
-        LegacyCompat.NormalizeLangCase(paths.VersionJarPath(options.VersionId), paths.Root);
+        LegacyCompat.NormalizeLangCase(paths.VersionJarPath(options.VersionId), gameDir);
 
         var classPath = string.Join(ArgumentBuilder.ClassPathSeparator,
             ArgumentBuilder.BuildClassPath(version, paths, options.VersionId));
@@ -54,7 +57,7 @@ public sealed class GameLauncher
 
         var psi = new ProcessStartInfo(java)
         {
-            WorkingDirectory = paths.Root,
+            WorkingDirectory = gameDir,
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
@@ -67,7 +70,7 @@ public sealed class GameLauncher
         psi.ArgumentList.Add(version.MainClass);
         foreach (var a in gameArgs) psi.ArgumentList.Add(a);
 
-        Directory.CreateDirectory(paths.Root);
+        Directory.CreateDirectory(gameDir);
 
         var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         process.OutputDataReceived += (_, e) => { if (e.Data is not null) OutputReceived?.Invoke(e.Data); };

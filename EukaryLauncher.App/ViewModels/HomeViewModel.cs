@@ -239,13 +239,24 @@ public sealed partial class HomeViewModel : ViewModelBase
                 return;
             }
 
-            // 2. 把该游戏版本的模组搬到游戏真正会读的 mods 目录
-            var gameVersion = LoaderDetector.DetectGameVersion(version.Id, version) ?? version.Id;
-            var deployed = ModDeployer.Deploy(_context.Paths, gameVersion, AppServices.ModIndex);
-            if (deployed > 0)
-                _log.Info($"已把 {gameVersion} 的 {deployed} 个模组同步到 {_context.Paths.Root}\\mods");
+            // 2. 版本隔离：装的时候记了旗标；老版本没旗标，第一次启动按当前全局设置补记
+            var isolated = VersionIsolationStore.Get(_context.Paths, version.Id);
+            if (isolated is null)
+            {
+                isolated = IsolationPolicy.ShouldIsolate(_settings.Current.VersionIsolation, version);
+                VersionIsolationStore.Set(_context.Paths, version.Id, isolated.Value);
+            }
+            var gameDirOverride = isolated.Value ? _context.Paths.VersionDir(version.Id) : null;
+            if (gameDirOverride is not null)
+                _log.Info($"版本 {version.Id} 已隔离，游戏目录：{gameDirOverride}");
 
-            // 3. 确保有 Java
+            // 3. 把该游戏版本的模组搬到游戏真正会读的 mods 目录
+            var gameVersion = LoaderDetector.DetectGameVersion(version.Id, version) ?? version.Id;
+            var deployed = ModDeployer.Deploy(_context.Paths, gameVersion, AppServices.ModIndex, gameDirOverride);
+            if (deployed > 0)
+                _log.Info($"已把 {gameVersion} 的 {deployed} 个模组同步到 {(gameDirOverride ?? _context.Paths.Root)}\\mods");
+
+            // 4. 确保有 Java
             var java = await EnsureJavaAsync(version, _cts.Token);
             if (java is null)
             {
@@ -253,7 +264,7 @@ public sealed partial class HomeViewModel : ViewModelBase
                 return;
             }
 
-            // 4. 拼参数并启动
+            // 5. 拼参数并启动
             var options = OfflineAccount.CreateLaunchOptions(
                 _context.Paths.Root,
                 version.Id,
@@ -267,9 +278,10 @@ public sealed partial class HomeViewModel : ViewModelBase
                     UseCustomResolution = _settings.Current.UseCustomResolution,
                     ExtraJvmArgs = _settings.Current.ExtraJvmArgs,
                     Visibility = _settings.Current.LauncherVisibility,
+                    EffectiveGameDirectory = gameDirOverride,
                 };
 
-            Directory.CreateDirectory(_context.Paths.Root);
+            Directory.CreateDirectory(gameDirOverride ?? _context.Paths.Root);
 
             var launcher = new GameLauncher();
             var visibility = LauncherVisibility.Unchanged; // 在 options 拼好后赋值，退出回调按本次启动的设置收尾

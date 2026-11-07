@@ -37,11 +37,22 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new VisibilityOption(LauncherVisibility.Unchanged, "游戏启动后仍保持不变"),
     ]);
 
+    /// <summary>「版本隔离设定」下拉框的选项（PCL2 同款五档），默认隔离所有版本。</summary>
+    public ObservableCollection<IsolationOption> IsolationOptions { get; } = new(
+    [
+        new IsolationOption(VersionIsolation.Off, "关闭"),
+        new IsolationOption(VersionIsolation.ModdedOnly, "隔离可安装 Mod 的版本"),
+        new IsolationOption(VersionIsolation.SnapshotsOnly, "隔离非正式版"),
+        new IsolationOption(VersionIsolation.ModdedAndSnapshots, "隔离可安装 Mod 的版本与非正式版"),
+        new IsolationOption(VersionIsolation.All, "隔离所有版本"),
+    ]);
+
     [ObservableProperty] private string gameDirectory = string.Empty;
     [ObservableProperty] private string mirrorId = string.Empty;
     [ObservableProperty] private int maxMemoryMb;
     [ObservableProperty] private int downloadThreads;
     [ObservableProperty] private LauncherVisibility launcherVisibility = LauncherVisibility.Unchanged;
+    [ObservableProperty] private VersionIsolation versionIsolation = VersionIsolation.All;
     [ObservableProperty] private bool useCustomResolution;
     [ObservableProperty] private int windowWidth;
     [ObservableProperty] private int windowHeight;
@@ -80,6 +91,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         MaxMemoryMb = _settings.Current.MaxMemoryMb;
         DownloadThreads = _settings.Current.DownloadThreads;
         LauncherVisibility = _settings.Current.LauncherVisibility;
+        VersionIsolation = _settings.Current.VersionIsolation;
         UseCustomResolution = _settings.Current.UseCustomResolution;
         WindowWidth = _settings.Current.WindowWidth;
         WindowHeight = _settings.Current.WindowHeight;
@@ -140,6 +152,24 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         _settings.Current.LauncherVisibility = value;
         _settings.Save();
+    }
+
+    partial void OnVersionIsolationChanged(VersionIsolation value)
+    {
+        // 进页面时的初始化赋的值和已保存值一致；只有用户真的换选项才弹窗
+        if (value == _settings.Current.VersionIsolation) return;
+
+        _settings.Current.VersionIsolation = value;
+        _settings.Save();
+
+        AppServices.ShowModalConfirm?.Invoke(new ModalConfirmRequest(
+            "版本隔离选项已修改",
+            "本设置仅会对之后新安装的版本生效。\n如果要修改已安装的版本的隔离方式，请在它的版本独立设置中调整。",
+            "确定",
+            Destructive: false,
+            CountdownSeconds: 0,
+            OnConfirm: () => { },
+            HideCancel: true));
     }
     partial void OnUseCustomResolutionChanged(bool value) { _settings.Current.UseCustomResolution = value; _settings.Save(); }
     partial void OnWindowWidthChanged(int value) { _settings.Current.WindowWidth = value; _settings.Save(); }
@@ -262,6 +292,11 @@ public sealed record MirrorOption(string Id, string DisplayName)
 public sealed record JavaOption(string Key, string DisplayName, string Path);
 
 public sealed record VisibilityOption(LauncherVisibility Value, string DisplayName)
+{
+    public override string ToString() => DisplayName;
+}
+
+public sealed record IsolationOption(VersionIsolation Value, string DisplayName)
 {
     public override string ToString() => DisplayName;
 }

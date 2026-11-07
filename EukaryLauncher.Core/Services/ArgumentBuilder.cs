@@ -147,7 +147,8 @@ public static class ArgumentBuilder
         ["${user_properties}"] = "{}",
         ["${version_name}"] = options.VersionId,
         ["${version_type}"] = version.Type ?? "release",
-        ["${game_directory}"] = paths.Root,
+        // 版本隔离时游戏目录指向 versions/<id>/，存档配置都落那里
+        ["${game_directory}"] = options.EffectiveGameDirectory ?? paths.Root,
         ["${assets_root}"] = paths.AssetsDir,
         ["${game_assets}"] = paths.AssetsDir,
         ["${assets_index_name}"] = version.Assets ?? version.AssetIndex?.Id ?? "",

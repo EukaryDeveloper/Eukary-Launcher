@@ -551,6 +551,8 @@ public partial class MainWindow : Window
         ConfirmTitle.Text = request.Title;
         ConfirmMessage.Text = request.Message;
         ConfirmActionButton.Style = (Style)FindResource(request.Destructive ? "DangerButton" : "PrimaryButton");
+        // 纯提示式弹窗（HideCancel）不给反悔的出口
+        ConfirmCancelButton.Visibility = request.HideCancel ? Visibility.Collapsed : Visibility.Visible;
         ConfirmHost.Visibility = Visibility.Visible;
         ConfirmHost.BeginAnimation(OpacityProperty, null);
 

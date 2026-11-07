@@ -3,14 +3,16 @@ using EukaryLauncher.Core.Models;
 
 namespace EukaryLauncher.App.Services;
 
-/// <summary>模态确认请求。CountdownSeconds &gt; 0 时确认按钮禁用 N 秒后才可点击。</summary>
+/// <summary>模态确认请求。CountdownSeconds &gt; 0 时确认按钮禁用 N 秒后才可点击；
+/// HideCancel = true 时只显示确认按钮（纯提示式弹窗）。</summary>
 public sealed record ModalConfirmRequest(
     string Title,
     string Message,
     string ConfirmText,
     bool Destructive,
     int CountdownSeconds,
-    Action OnConfirm);
+    Action OnConfirm,
+    bool HideCancel = false);
 
 /// <summary>
 /// 极简的服务定位器。没有引入 DI 容器——目前只有几个单例，
