@@ -56,6 +56,10 @@ public sealed partial class HomeViewModel : ViewModelBase
     [ObservableProperty]
     private string? selectedVersionId;
 
+    /// <summary>开始按钮第二行的小字：本体版本号 + 加载器，如「1.20.4-Fabric 0.16.9」。</summary>
+    [ObservableProperty]
+    private string launchSubText = "";
+
     [ObservableProperty]
     private bool isBusy;
 
@@ -129,6 +133,42 @@ public sealed partial class HomeViewModel : ViewModelBase
             SelectedVersionId = previous;
         else
             SelectedVersionId = InstalledVersions.FirstOrDefault() ?? "";
+
+        // 列表刷新后若选中项没变（不触发 OnSelectedVersionIdChanged），也补一次副标题刷新
+        RefreshLaunchSubText();
+    }
+
+    /// <summary>
+    /// 扫描当前游戏文件夹里选中版本的 json，取本体版本号与加载器拼副标题。
+    /// 例：1.20.4-Fabric 0.16.9；原版只显示版本号。
+    /// </summary>
+    private void RefreshLaunchSubText()
+    {
+        var id = SelectedVersionId;
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            LaunchSubText = "";
+            return;
+        }
+
+        var root = _context.Paths.Root;
+        Task.Run(() => FolderVersionScanner.Scan(root).FirstOrDefault(v => v.Id == id))
+            .ContinueWith(t =>
+            {
+                AppServices.Post(() =>
+                {
+                    var info = t.IsFaulted ? null : t.Result;
+                    var text = info is null
+                        ? id
+                        : info.LoaderText == "原版"
+                            ? info.GameVersion
+                            : $"{info.GameVersion}-{info.LoaderText}";
+
+                    // 期间用户又切了版本，旧结果作废
+                    if (SelectedVersionId == id)
+                        LaunchSubText = text;
+                });
+            });
     }
 
     partial void OnPlayerNameChanged(string value)
@@ -149,6 +189,7 @@ public sealed partial class HomeViewModel : ViewModelBase
         _settings.Save();
         OnPropertyChanged(nameof(CanLaunch));
         LaunchCommand.NotifyCanExecuteChanged();
+        RefreshLaunchSubText();
     }
 
     partial void OnIsBusyChanged(bool value) => LaunchCommand.NotifyCanExecuteChanged();

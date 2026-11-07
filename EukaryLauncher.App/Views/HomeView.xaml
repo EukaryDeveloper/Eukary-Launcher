@@ -24,10 +24,28 @@
                         ToolTip="选择要启动的已安装版本"
                         Click="OnVersionSelectClick"/>
             </StackPanel>
-            <Button Content="开始游戏" Style="{StaticResource LargeButton}"
-                    Height="48" MinWidth="220" FontSize="{StaticResource FontSizeLg}" Margin="0,12,0,0"
+            <Button Style="{StaticResource LargeButton}"
+                    Height="48" MinWidth="220" Margin="0,12,0,0"
                     Command="{Binding LaunchCommand}"
-                    IsEnabled="{Binding CanLaunch}"/>
+                    IsEnabled="{Binding CanLaunch}">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="开始游戏" FontSize="{StaticResource FontSizeLg}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding LaunchSubText}" FontSize="{StaticResource FontSizeXs}"
+                               FontWeight="Normal" Margin="0,2,0,0" Opacity="0.7"
+                               HorizontalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
     </Grid>
