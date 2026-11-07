@@ -25,6 +25,13 @@ public sealed partial class FolderVersionRow : ObservableObject
     [ObservableProperty]
     private bool isCurrent;
 
+    /// <summary>列表首行 / 末行（信息流行样式的圆角贴合用）。</summary>
+    [ObservableProperty]
+    private bool isFirst;
+
+    [ObservableProperty]
+    private bool isLast;
+
     public void UpdateCurrent(string currentVersionId) =>
         IsCurrent = string.Equals(Info.Id, currentVersionId, StringComparison.OrdinalIgnoreCase);
 }
@@ -108,6 +115,7 @@ public sealed partial class VersionSelectViewModel : ViewModelBase
                 }
                 foreach (var info in t.Result)
                     Versions.Add(new FolderVersionRow(info, _home.SelectedVersionId ?? ""));
+                UpdateRowFlags();
             });
         });
     }
@@ -117,6 +125,16 @@ public sealed partial class VersionSelectViewModel : ViewModelBase
         var current = _home.SelectedVersionId ?? "";
         foreach (var row in Versions)
             row.UpdateCurrent(current);
+    }
+
+    /// <summary>标记首末行（行集合只在换文件夹时整体重建，不会单独增删）。</summary>
+    private void UpdateRowFlags()
+    {
+        for (var i = 0; i < Versions.Count; i++)
+        {
+            Versions[i].IsFirst = i == 0;
+            Versions[i].IsLast = i == Versions.Count - 1;
+        }
     }
 
     // ============================ 命令 ============================
