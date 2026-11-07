@@ -123,19 +123,31 @@ public partial class MainWindow : Window
 
         _vm.VersionSelect.RefreshFolders();
         _versionSelectAnimating = true;
+
+        // 起点：旧页面归位且不透明，新页面停在外侧且覆盖层全透明
+        BeginSlide(MainSidebarTf, 0);
+        BeginSlide(PageHostTf, 0);
+        MainSidebar.BeginAnimation(OpacityProperty, null);
+        MainSidebar.Opacity = 1;
+        PageHost.BeginAnimation(OpacityProperty, null);
+        PageHost.Opacity = 1;
+        VersionSelectView.SnapClosed(MainSidebarWidth, PageSlideOffset);
+        VersionSelectOverlay.BeginAnimation(OpacityProperty, null);
+        VersionSelectOverlay.Opacity = 0;
         VersionSelectOverlay.Visibility = Visibility.Visible;
 
-        // 全部摆到打开前的起点
-        BeginSlide(MainSidebarTf, null, 0);
-        BeginSlide(PageHostTf, null, 0);
-        MainSidebarTf.X = 0;
-        PageHostTf.X = 0;
-        VersionSelectView.SnapClosed(MainSidebarWidth, PageSlideOffset);
+        // ① 覆盖层与旧页面交叉淡化：新页面不是"啪"地盖上来，而是慢慢浮出
+        FadeTo(VersionSelectOverlay, 0, 1, 260);
 
-        SlideTo(MainSidebarTf, -MainSidebarWidth);
-        SlideTo(PageHostTf, PageSlideOffset);
-        SlideTo(VersionSelectView.SidebarTransform, 0);
-        SlideTo(VersionSelectView.ContentTransform, 0, onCompleted: () => _versionSelectAnimating = false);
+        // ② 旧页面退场：侧栏完全滑出，页面只退一小段并淡出（视差 + 淡化，不硬推整屏）
+        SlideTo(MainSidebarTf, -MainSidebarWidth, 340);
+        FadeTo(MainSidebar, 1, 0, 220);
+        SlideTo(PageHostTf, PageSlideOffset, 380);
+        FadeTo(PageHost, 1, 0, 240);
+
+        // ③ 新页面进场：侧栏先到，信息流晚 70ms 跟上，形成层叠感
+        SlideTo(VersionSelectView.SidebarTransform, 0, 340, onCompleted: () => _versionSelectAnimating = false);
+        SlideTo(VersionSelectView.ContentTransform, 0, 400, delayMs: 70);
     }
 
     private void CloseVersionSelectUi()
@@ -143,21 +155,41 @@ public partial class MainWindow : Window
         if (VersionSelectOverlay.Visibility != Visibility.Visible || _versionSelectAnimating) return;
 
         _versionSelectAnimating = true;
-        SlideTo(MainSidebarTf, 0);
-        SlideTo(PageHostTf, 0);
-        SlideTo(VersionSelectView.SidebarTransform, -MainSidebarWidth);
-        SlideTo(VersionSelectView.ContentTransform, PageSlideOffset, onCompleted: () =>
+
+        // 新页面先退（反向），旧页面稍晚淡回，避免两块内容同起同落
+        SlideTo(VersionSelectView.SidebarTransform, -MainSidebarWidth, 320);
+        SlideTo(VersionSelectView.ContentTransform, PageSlideOffset, 340);
+        FadeTo(VersionSelectOverlay, 1, 0, 300, delayMs: 60, onCompleted: () =>
         {
             VersionSelectOverlay.Visibility = Visibility.Collapsed;
+            VersionSelectOverlay.BeginAnimation(OpacityProperty, null);
+            VersionSelectOverlay.Opacity = 0;
             _versionSelectAnimating = false;
         });
+
+        SlideTo(MainSidebarTf, 0, 380, delayMs: 40);
+        FadeTo(MainSidebar, 0, 1, 280, delayMs: 40);
+        SlideTo(PageHostTf, 0, 380, delayMs: 40);
+        FadeTo(PageHost, 0, 1, 280, delayMs: 40);
     }
 
     private const double MainSidebarWidth = 180;
-    private const double PageSlideOffset = 320;
+
+    /// <summary>旧页面退场位移。只退一小段再淡出，比把整屏推出窗口柔和得多。</summary>
+    private const double PageSlideOffset = 220;
+
+    /// <summary>
+    /// 页面级转场的缓动：cubic-bezier(0.32, 0.72, 0, 1)。
+    /// 比全站通用的 (0.2, 0.8, 0.2, 1) 起步更缓、收尾拖得更长，大面积位移才不显得急。
+    /// </summary>
+    private static System.Windows.Media.Animation.EasingFunctionBase PageEase => new Animation.CubicBezierEase
+    {
+        ControlPoint1 = new Point(0.32, 0.72),
+        ControlPoint2 = new Point(0, 1),
+    };
 
     /// <summary>X 平滑动画；无动画环境（系统关动效）直接落到终点。</summary>
-    private void SlideTo(TranslateTransform tf, double to, Action? onCompleted = null)
+    private void SlideTo(TranslateTransform tf, double to, int ms = 300, int delayMs = 0, Action? onCompleted = null)
     {
         if (!AnimationHelper.IsEnabled)
         {
@@ -166,21 +198,42 @@ public partial class MainWindow : Window
             return;
         }
 
-        var anim = new DoubleAnimation(to, new Duration(TimeSpan.FromMilliseconds(280)))
+        var anim = new DoubleAnimation(to, new Duration(TimeSpan.FromMilliseconds(ms)))
         {
-            // CubicBezierEase 的默认控制点就是设计图纸的 cubic-bezier(0.2, 0.8, 0.2, 1)
-            EasingFunction = new Animation.CubicBezierEase(),
+            EasingFunction = PageEase,
+            BeginTime = TimeSpan.FromMilliseconds(delayMs),
         };
         if (onCompleted is not null)
             anim.Completed += (_, _) => onCompleted();
         tf.BeginAnimation(TranslateTransform.XProperty, anim);
     }
 
+    /// <summary>不透明度动画（两端都显式给值，不依赖当前值）。</summary>
+    private void FadeTo(UIElement element, double from, double to, int ms = 240, int delayMs = 0,
+        Action? onCompleted = null)
+    {
+        if (!AnimationHelper.IsEnabled)
+        {
+            element.Opacity = to;
+            onCompleted?.Invoke();
+            return;
+        }
+
+        var anim = new DoubleAnimation(from, to, new Duration(TimeSpan.FromMilliseconds(ms)))
+        {
+            EasingFunction = PageEase,
+            BeginTime = TimeSpan.FromMilliseconds(delayMs),
+        };
+        if (onCompleted is not null)
+            anim.Completed += (_, _) => onCompleted();
+        element.BeginAnimation(OpacityProperty, anim);
+    }
+
     /// <summary>停掉正在进行的动画并直接落位（SnapXxx 之前调用）。</summary>
-    private static void BeginSlide(TranslateTransform tf, double? x, double fallback)
+    private static void BeginSlide(TranslateTransform tf, double x)
     {
         tf.BeginAnimation(TranslateTransform.XProperty, null);
-        tf.X = x ?? fallback;
+        tf.X = x;
     }
 
     // ==================== 通用模态确认对话框 ====================
